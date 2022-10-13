@@ -18,13 +18,10 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
 import { PostResolver } from 'resolvers/post.resolver';
 import { UserResolver } from 'resolvers/user.resolver';
 
-import redis from 'redis';
+import * as redis from 'redis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
 import { __prod__ } from './constants';
-
-const RedisStore = connectRedis(session);
-const redisClient = redis.createClient();
 
 // import { resolvers, typeDefs } from 'minimal-apollo-setup';
 
@@ -62,6 +59,16 @@ export default class Application {
 
         // 这一行允许 ApolloStudio 接管
         app.use(cors());
+
+        const RedisStore = connectRedis(session);
+        const redisClient = redis.createClient({
+            legacyMode: true,
+            socket: {
+                host: 'localhost',
+                port: 55001,
+            },
+        });
+        redisClient.connect().catch(console.error);
 
         app.use(
             session({

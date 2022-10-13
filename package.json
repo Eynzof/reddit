@@ -27,6 +27,7 @@
     "@types/cors": "^2.8.6",
     "@types/express-session": "1.17.0",
     "@types/mocha": "^8.0.1",
+    "@types/redis": "^4.0.11",
     "@types/supertest": "^2.0.10",
     "@types/uuid": "^8.0.0",
     "@typescript-eslint/eslint-plugin": "^3.8.0",
