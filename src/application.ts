@@ -67,22 +67,28 @@ export default class Application {
         // 这一行允许 ApolloStudio 接管
         app.use(cors());
 
+        // 相当于 let RedisStore = require("connect-redis")(session)
         const RedisStore = connectRedis(session);
+
+        // 构造 Redis 客户端
         const url = 'redis://default:redispw@localhost:55001';
         const redisClient = redis.createClient({
-            url,
+            legacyMode: true,
+            url: url,
         });
 
         const s = session({
-            store: new RedisStore({ client: redisClient }),
-            secret: 'mySecret',
+            store: new RedisStore({
+                client: redisClient,
+            }),
+            secret: 'masoniclab',
             resave: false,
             saveUninitialized: false,
-            name: 'sessionId',
+            name: 'qid',
             cookie: {
                 secure: false, // if true: only transmit cookie over https, in prod, always activate this
                 httpOnly: true, // if true: prevents client side JS from reading the cookie
-                maxAge: 1000 * 60 * 30, // session max age in milliseconds
+                maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // session max age in milliseconds
                 // explicitly set cookie to lax
                 // to make sure that all cookies accept it
                 // you should never use none anyway
@@ -151,7 +157,9 @@ export default class Application {
             const port = 4000;
 
             await server.start();
-            server.applyMiddleware({ app });
+            server.applyMiddleware({
+                app,
+            });
 
             app.listen(port, () => {
                 console.log(`server listening on port ${port}`);
