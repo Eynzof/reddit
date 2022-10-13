@@ -21,6 +21,8 @@ import { UserResolver } from 'resolvers/user.resolver';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
 
+import parseurl from 'parseurl';
+
 // 不能写成import redis from 'redis';
 // it just depends on how the package is made and/or has been updated.
 // older packages that use module.exports VS the newer es6 import / export statements often need to be imported using *.
@@ -77,26 +79,47 @@ export default class Application {
             url: url,
         });
 
-        const s = session({
-            store: new RedisStore({
-                client: redisClient,
+        app.use(
+            session({
+                store: new RedisStore({
+                    client: redisClient,
+                }),
+                secret: 'masoniclab',
+                resave: false,
+                saveUninitialized: false,
+                name: 'qid',
+                cookie: {
+                    secure: false, // if true: only transmit cookie over https, in prod, always activate this
+                    httpOnly: true, // if true: prevents client side JS from reading the cookie
+                    maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // session max age in milliseconds
+                    // explicitly set cookie to lax
+                    // to make sure that all cookies accept it
+                    // you should never use none anyway
+                    sameSite: 'lax',
+                },
             }),
-            secret: 'masoniclab',
-            resave: false,
-            saveUninitialized: false,
-            name: 'qid',
-            cookie: {
-                secure: false, // if true: only transmit cookie over https, in prod, always activate this
-                httpOnly: true, // if true: prevents client side JS from reading the cookie
-                maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // session max age in milliseconds
-                // explicitly set cookie to lax
-                // to make sure that all cookies accept it
-                // you should never use none anyway
-                sameSite: 'lax',
-            },
+        );
+
+        app.use(function (req, res, next) {
+            if (!req.session.views) {
+                req.session.views = {};
+            }
+
+            // get the url pathname
+            const pathname = parseurl(req)?.pathname;
+
+            // count the views
+            req.session.views[pathname!] =
+                (req.session.views[pathname!] || 0) + 1;
+
+            next();
         });
 
-        app.use(s);
+        app.get('/', function (req, res, next) {
+            res.send(
+                'you viewed this page ' + req.session.views!['/foo'] + ' times',
+            );
+        });
 
         // const RedisStore = connectRedis(session);
 
