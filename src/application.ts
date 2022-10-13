@@ -20,7 +20,14 @@ import { UserResolver } from 'resolvers/user.resolver';
 
 import session from 'express-session';
 import connectRedis from 'connect-redis';
-import redis from 'redis';
+
+// 不能写成import redis from 'redis';
+// it just depends on how the package is made and/or has been updated.
+// older packages that use module.exports VS the newer es6 import / export statements often need to be imported using *.
+// if you use typescript, often time you will get a warning saying something like [package name] doesn't have a default export
+// [node.js - Redis is in docker undefined - Stack Overflow](https://stackoverflow.com/questions/64799055/redis-is-in-docker-undefined)
+
+import * as redis from 'redis';
 import { __prod__ } from './constants';
 
 // import { resolvers, typeDefs } from 'minimal-apollo-setup';
