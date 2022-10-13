@@ -14,13 +14,13 @@ import { HelloResolver } from 'resolvers/hello.resolver';
 import { Post } from 'entities/post.entity';
 import { ApolloServer } from 'apollo-server-express';
 
-import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
+import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
 import { PostResolver } from 'resolvers/post.resolver';
 import { UserResolver } from 'resolvers/user.resolver';
 
-import * as redis from 'redis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
+import redis from 'redis';
 import { __prod__ } from './constants';
 
 // import { resolvers, typeDefs } from 'minimal-apollo-setup';
@@ -61,33 +61,58 @@ export default class Application {
         app.use(cors());
 
         const RedisStore = connectRedis(session);
+        const url = 'redis://default:redispw@localhost:55001';
         const redisClient = redis.createClient({
-            legacyMode: true,
-            socket: {
-                host: 'localhost',
-                port: 55001,
+            url,
+        });
+
+        const s = session({
+            store: new RedisStore({ client: redisClient }),
+            secret: 'mySecret',
+            resave: false,
+            saveUninitialized: false,
+            name: 'sessionId',
+            cookie: {
+                secure: false, // if true: only transmit cookie over https, in prod, always activate this
+                httpOnly: true, // if true: prevents client side JS from reading the cookie
+                maxAge: 1000 * 60 * 30, // session max age in milliseconds
+                // explicitly set cookie to lax
+                // to make sure that all cookies accept it
+                // you should never use none anyway
+                sameSite: 'lax',
             },
         });
-        redisClient.connect().catch(console.error);
 
-        app.use(
-            session({
-                name: 'qid',
-                store: new RedisStore({
-                    client: redisClient,
-                    disableTouch: true,
-                }),
-                cookie: {
-                    maxAge: 1000 * 60 * 60 * 24 * 30,
-                    httpOnly: true,
-                    sameSite: 'lax',
-                    secure: !__prod__,
-                },
-                saveUninitialized: false,
-                secret: 'masoniclba',
-                resave: false,
-            }),
-        );
+        app.use(s);
+
+        // const RedisStore = connectRedis(session);
+
+        // const url = 'redis://default:redispw@localhost:55001';
+        // const redisClient = redis.createClient({
+        //     url,
+        // });
+
+        // redisClient.connect().catch(console.error);
+        // redisClient.on('error', console.error);
+        // app.use(
+        //     session({
+        //         name: 'qid',
+        //         store: new RedisStore({
+        //             client: redisClient,
+        //             disableTouch: true,
+        //         }),
+        //         cookie: {
+        //             path: '/',
+        //             maxAge: 1000 * 60 * 60 * 24 * 30 * 10, // 10 years
+        //             httpOnly: true,
+        //             sameSite: 'lax',
+        //             secure: !__prod__,
+        //         },
+        //         saveUninitialized: false,
+        //         secret: 'masoniclab',
+        //         resave: false,
+        //     }),
+        // );
 
         try {
             const { typeDefs, resolvers } = await buildTypeDefsAndResolvers({
@@ -105,9 +130,7 @@ export default class Application {
                 resolvers,
                 csrfPrevention: true,
                 cache: 'bounded',
-                plugins: [
-                    ApolloServerPluginLandingPageLocalDefault({ embed: true }),
-                ],
+                plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
                 context: ({ req, res }): MyContext => ({
                     em: this.orm.em.fork(),
                     req,
