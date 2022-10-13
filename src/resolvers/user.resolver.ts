@@ -9,8 +9,8 @@ import {
     Query,
     Resolver,
 } from 'type-graphql';
-import { MyContext } from 'utils/types/types';
 import argon2 from 'argon2';
+import { MyContext } from 'utils/interfaces/context.interface';
 
 @InputType()
 class UsernamepasswordingInput {
@@ -100,7 +100,7 @@ export class UserResolver {
     async login(
         @Arg('options', () => UsernamepasswordingInput)
         options: UsernamepasswordingInput,
-        @Ctx() { em }: MyContext,
+        @Ctx() { em, req }: MyContext,
     ): Promise<UserResponse> {
         {
             const user = await em.findOne(User, {
@@ -128,6 +128,8 @@ export class UserResolver {
                     ],
                 };
             }
+
+            req.session.userId = user.id;
 
             return {
                 user,

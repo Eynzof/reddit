@@ -17,6 +17,15 @@ import { ApolloServer } from 'apollo-server-express';
 import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
 import { PostResolver } from 'resolvers/post.resolver';
 import { UserResolver } from 'resolvers/user.resolver';
+
+import redis from 'redis';
+import session from 'express-session';
+import connectRedis from 'connect-redis';
+import { __prod__ } from './constants';
+
+const RedisStore = connectRedis(session);
+const redisClient = redis.createClient();
+
 // import { resolvers, typeDefs } from 'minimal-apollo-setup';
 
 // TODO: create service for this
@@ -50,8 +59,28 @@ export default class Application {
 
     public init = async (): Promise<void> => {
         const app = express();
+
         // 这一行允许 ApolloStudio 接管
         app.use(cors());
+
+        app.use(
+            session({
+                name: 'qid',
+                store: new RedisStore({
+                    client: redisClient,
+                    disableTouch: true,
+                }),
+                cookie: {
+                    maxAge: 1000 * 60 * 60 * 24 * 30,
+                    httpOnly: true,
+                    sameSite: 'lax',
+                    secure: !__prod__,
+                },
+                saveUninitialized: false,
+                secret: 'masoniclba',
+                resave: false,
+            }),
+        );
 
         try {
             const { typeDefs, resolvers } = await buildTypeDefsAndResolvers({
@@ -72,7 +101,11 @@ export default class Application {
                 plugins: [
                     ApolloServerPluginLandingPageLocalDefault({ embed: true }),
                 ],
-                context: () => ({ em: this.orm.em.fork() }),
+                context: ({ req, res }): MyContext => ({
+                    em: this.orm.em.fork(),
+                    req,
+                    res,
+                }),
             });
 
             // succeeded

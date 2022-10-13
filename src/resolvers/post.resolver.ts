@@ -1,6 +1,6 @@
 import { Post } from 'entities/post.entity';
 import { Arg, Ctx, Mutation, Query, Resolver } from 'type-graphql';
-import { MyContext } from 'utils/types/types';
+import { MyContext } from 'utils/interfaces/context.interface';
 
 @Resolver()
 export class PostResolver {
