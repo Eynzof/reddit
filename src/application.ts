@@ -79,6 +79,9 @@ export default class Application {
             url: url,
         });
 
+        // [node.js - Redis NodeJs server error,client is closed - Stack Overflow](https://stackoverflow.com/questions/70185436/redis-nodejs-server-error-client-is-closed)
+        await redisClient.connect();
+
         app.use(
             session({
                 store: new RedisStore({
@@ -105,19 +108,15 @@ export default class Application {
                 req.session.views = {};
             }
 
-            // get the url pathname
-            const pathname = parseurl(req)?.pathname;
-
             // count the views
-            req.session.views[pathname!] =
-                (req.session.views[pathname!] || 0) + 1;
+            req.session.views['/'] = (req.session.views['/'] || 0) + 1;
 
             next();
         });
 
         app.get('/', function (req, res, next) {
             res.send(
-                'you viewed this page ' + req.session.views!['/foo'] + ' times',
+                'you viewed this page ' + req.session.views['/'] + ' times',
             );
         });
 
