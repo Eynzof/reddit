@@ -41,15 +41,8 @@ export class UserResolver {
   @Query(() => User, { nullable: true })
   async me(@Ctx() { req, res, em }: MyContext) {
     // not logged in
-    console.log(
-      '----------------------------------------------------------------',
-    );
     if (!req.session.userId) {
       console.log('User not logged in');
-      console.log(req.session);
-      console.log(
-        '----------------------------------------------------------------',
-      );
       return null;
     }
 
@@ -112,6 +105,9 @@ export class UserResolver {
         };
       }
     }
+
+    req.session.userId = user.id;
+
     return { user };
   }
 
@@ -150,19 +146,11 @@ export class UserResolver {
         };
       }
 
-      console.log(
-        '----------------------------------------------------------------',
-      );
       console.log('User logged in successfully');
 
       if (!req.session.userId) {
         req.session.userId = user.id;
       }
-
-      console.log(req.session);
-      console.log(
-        '----------------------------------------------------------------',
-      );
       return {
         user,
       };
