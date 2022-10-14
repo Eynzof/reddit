@@ -36,158 +36,128 @@ import { __prod__ } from './constants';
 
 // TODO: create service for this
 registerEnumType(PublisherType, {
-    name: 'PublisherType',
-    description: 'Type of the publisher',
+  name: 'PublisherType',
+  description: 'Type of the publisher',
 });
 
 export default class Application {
-    public orm: MikroORM<IDatabaseDriver<Connection>>;
-    public host: express.Application;
-    public server: Server;
+  public orm: MikroORM<IDatabaseDriver<Connection>>;
 
-    public connect = async (): Promise<void> => {
-        try {
-            this.orm = await MikroORM.init(ormConfig);
-            const migrator = this.orm.getMigrator();
-            const migrations = await migrator.getPendingMigrations();
-            if (migrations && migrations.length > 0) {
-                await migrator.up();
-            }
-        } catch (error) {
-            console.error('📌 Could not connect to the database', error);
-            throw Error(error);
-        }
-    };
+  public connect = async (): Promise<void> => {
+    try {
+      this.orm = await MikroORM.init(ormConfig);
+      const migrator = this.orm.getMigrator();
+      const migrations = await migrator.getPendingMigrations();
+      if (migrations && migrations.length > 0) {
+        await migrator.up();
+      }
+    } catch (error) {
+      console.error('📌 Could not connect to the database', error);
+      throw Error(error);
+    }
+  };
 
-    private insertTestData = async () => {
-        await this.orm.em.nativeInsert(Post, { title: 'first' });
-    };
+  private insertTestData = async () => {
+    await this.orm.em.nativeInsert(Post, { title: 'first' });
+  };
 
-    public init = async (): Promise<void> => {
-        const app = express();
+  public init = async (): Promise<void> => {
+    const app = express();
 
-        // 这一行允许 ApolloStudio 接管
-        app.use(cors());
+    // 这一行允许 ApolloStudio 接管
+    app.use(cors());
 
-        // 相当于 let RedisStore = require("connect-redis")(session)
-        const RedisStore = connectRedis(session);
+    // 相当于 let RedisStore = require("connect-redis")(session)
+    const RedisStore = connectRedis(session);
 
-        // 构造 Redis 客户端
-        const url = 'redis://default:redispw@localhost:55001';
-        const redisClient = redis.createClient({
-            legacyMode: true,
-            url: url,
-        });
+    // 构造 Redis 客户端
+    const url = 'redis://default:redispw@localhost:55000';
+    const redisClient = redis.createClient({
+      legacyMode: true,
+      url: url,
+    });
 
-        // [node.js - Redis NodeJs server error,client is closed - Stack Overflow](https://stackoverflow.com/questions/70185436/redis-nodejs-server-error-client-is-closed)
-        await redisClient.connect();
+    // [node.js - Redis NodeJs server error,client is closed - Stack Overflow](https://stackoverflow.com/questions/70185436/redis-nodejs-server-error-client-is-closed)
+    await redisClient.connect();
 
-        app.use(
-            session({
-                store: new RedisStore({
-                    client: redisClient,
-                }),
-                secret: 'masoniclab',
-                resave: false,
-                saveUninitialized: false,
-                name: 'qid',
-                cookie: {
-                    secure: false, // if true: only transmit cookie over https, in prod, always activate this
-                    httpOnly: true, // if true: prevents client side JS from reading the cookie
-                    maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // session max age in milliseconds
-                    // explicitly set cookie to lax
-                    // to make sure that all cookies accept it
-                    // you should never use none anyway
-                    sameSite: 'lax',
-                },
-            }),
-        );
+    app.set('trust proxy', 1);
 
-        app.use(function (req, res, next) {
-            if (!req.session.views) {
-                req.session.views = {};
-            }
+    app.use(
+      session({
+        store: new RedisStore({
+          client: redisClient,
+        }),
+        secret: 'masoniclab',
+        resave: false,
+        saveUninitialized: false,
+        name: 'qid',
+        cookie: {
+          // keep this false, or the cookie won't be saved to local browser,
+          // which caused the view counter not working properly
+          secure: false, // if true: only transmit cookie over https, in prod, always activate this
+          httpOnly: true, // if true: prevents client side JS from reading the cookie
+          maxAge: 1000 * 60 * 30, // session max age in milliseconds
+          // explicitly set cookie to lax
+          // to make sure that all cookies accept it
+          // you should never use none anyway
+          sameSite: 'lax',
+        },
+      }),
+    );
 
-            // count the views
-            req.session.views['/'] = (req.session.views['/'] || 0) + 1;
+    app.use(function (req, res, next) {
+      if (!req.session.views) {
+        req.session.views = {};
+      }
 
-            next();
-        });
+      // count the views
+      req.session.views['/'] = (req.session.views['/'] || 0) + 1;
 
-        app.get('/', function (req, res, next) {
-            res.send(
-                'you viewed this page ' + req.session.views['/'] + ' times',
-            );
-        });
+      next();
+    });
 
-        // const RedisStore = connectRedis(session);
+    app.get('/', function (req, res, next) {
+      res.send('you viewed this page ' + req.session.views['/'] + ' times');
+    });
+    try {
+      const { typeDefs, resolvers } = await buildTypeDefsAndResolvers({
+        resolvers: [
+          BookResolver,
+          AuthorResolver,
+          HelloResolver,
+          PostResolver,
+          UserResolver,
+        ],
+      });
 
-        // const url = 'redis://default:redispw@localhost:55001';
-        // const redisClient = redis.createClient({
-        //     url,
-        // });
+      const server = new ApolloServer({
+        typeDefs,
+        resolvers,
+        csrfPrevention: true,
+        cache: 'bounded',
+        plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
+        context: ({ req, res }): MyContext => ({
+          em: this.orm.em,
+          req,
+          res,
+        }),
+      });
 
-        // redisClient.connect().catch(console.error);
-        // redisClient.on('error', console.error);
-        // app.use(
-        //     session({
-        //         name: 'qid',
-        //         store: new RedisStore({
-        //             client: redisClient,
-        //             disableTouch: true,
-        //         }),
-        //         cookie: {
-        //             path: '/',
-        //             maxAge: 1000 * 60 * 60 * 24 * 30 * 10, // 10 years
-        //             httpOnly: true,
-        //             sameSite: 'lax',
-        //             secure: !__prod__,
-        //         },
-        //         saveUninitialized: false,
-        //         secret: 'masoniclab',
-        //         resave: false,
-        //     }),
-        // );
+      // succeeded
+      this.insertTestData();
 
-        try {
-            const { typeDefs, resolvers } = await buildTypeDefsAndResolvers({
-                resolvers: [
-                    BookResolver,
-                    AuthorResolver,
-                    HelloResolver,
-                    PostResolver,
-                    UserResolver,
-                ],
-            });
+      const port = 4000;
 
-            const server = new ApolloServer({
-                typeDefs,
-                resolvers,
-                csrfPrevention: true,
-                cache: 'bounded',
-                plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
-                context: ({ req, res }): MyContext => ({
-                    em: this.orm.em.fork(),
-                    req,
-                    res,
-                }),
-            });
+      await server.start();
+      server.applyMiddleware({
+        app,
+      });
 
-            // succeeded
-            this.insertTestData();
-
-            const port = 4000;
-
-            await server.start();
-            server.applyMiddleware({
-                app,
-            });
-
-            app.listen(port, () => {
-                console.log(`server listening on port ${port}`);
-            });
-        } catch (error) {
-            console.error('📌 Could not start server', error);
-        }
-    };
+      app.listen(port, () => {
+        console.log(`server listening on port ${port}`);
+      });
+    } catch (error) {
+      console.error('📌 Could not start server', error);
+    }
+  };
 }
