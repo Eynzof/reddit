@@ -122,6 +122,8 @@ export class UserResolver {
     @Ctx() { req, res, em }: MyContext,
   ): Promise<UserResponse> {
     {
+      console.log(req.sessionID);
+      console.log(req.session);
       const user = await em.findOne(User, {
         username: options.username.toLowerCase(),
       });

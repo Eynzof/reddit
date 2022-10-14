@@ -42,6 +42,8 @@ registerEnumType(PublisherType, {
 
 export default class Application {
   public orm: MikroORM<IDatabaseDriver<Connection>>;
+  public host: express.Application;
+  public server: Server;
 
   public connect = async (): Promise<void> => {
     try {
@@ -64,8 +66,13 @@ export default class Application {
   public init = async (): Promise<void> => {
     const app = express();
 
+    const corsOptions = {
+      // credentials: true,
+      // origin: ['http://localhost:4000'],
+    };
+
     // 这一行允许 ApolloStudio 接管
-    app.use(cors());
+    app.use(cors(corsOptions));
 
     // 相当于 let RedisStore = require("connect-redis")(session)
     const RedisStore = connectRedis(session);
@@ -80,7 +87,7 @@ export default class Application {
     // [node.js - Redis NodeJs server error,client is closed - Stack Overflow](https://stackoverflow.com/questions/70185436/redis-nodejs-server-error-client-is-closed)
     await redisClient.connect();
 
-    app.set('trust proxy', 1);
+    app.set('trust proxy', true);
 
     app.use(
       session({
@@ -105,20 +112,21 @@ export default class Application {
       }),
     );
 
-    app.use(function (req, res, next) {
-      if (!req.session.views) {
-        req.session.views = {};
-      }
+    // app.use(function (req, res, next) {
+    //   if (!req.session.views) {
+    //     req.session.views = {};
+    //   }
 
-      // count the views
-      req.session.views['/'] = (req.session.views['/'] || 0) + 1;
+    //   // count the views
+    //   req.session.views['/'] = (req.session.views['/'] || 0) + 1;
 
-      next();
-    });
+    //   next();
+    // });
 
-    app.get('/', function (req, res, next) {
-      res.send('you viewed this page ' + req.session.views['/'] + ' times');
-    });
+    // app.get('/', function (req, res, next) {
+    //   res.send('you viewed this page ' + req.session.views['/'] + ' times');
+    // });
+
     try {
       const { typeDefs, resolvers } = await buildTypeDefsAndResolvers({
         resolvers: [
