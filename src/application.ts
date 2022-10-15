@@ -65,14 +65,13 @@ export default class Application {
 
   public init = async (): Promise<void> => {
     const app = express();
-
-    const corsOptions = {
-      // credentials: true,
-      // origin: ['http://localhost:4000'],
-    };
-
     // 这一行允许 ApolloStudio 接管
-    app.use(cors(corsOptions));
+    app.use(
+      cors({
+        origin: 'http://localhost:3000',
+        credentials: true,
+      }),
+    );
 
     // 相当于 let RedisStore = require("connect-redis")(session)
     const RedisStore = connectRedis(session);
@@ -159,6 +158,7 @@ export default class Application {
       await server.start();
       server.applyMiddleware({
         app,
+        cors: false,
       });
 
       app.listen(port, () => {
