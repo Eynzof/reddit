@@ -105,7 +105,9 @@ export class UserResolver {
         };
       }
     }
-
+    // store user id session
+    // this will set a cookie on the user
+    // keep them logged in
     req.session.userId = user.id;
 
     return { user };
@@ -113,47 +115,40 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async login(
-    @Arg('options', () => UsernamepasswordingInput)
-    options: UsernamepasswordingInput,
-    @Ctx() { req, res, em }: MyContext,
+    @Arg('options') options: UsernamepasswordingInput,
+    @Ctx() { em, req }: MyContext,
   ): Promise<UserResponse> {
-    {
-      console.log(req.sessionID);
-      console.log(req.session);
-      const user = await em.findOne(User, {
-        username: options.username.toLowerCase(),
-      });
-      if (!user) {
-        return {
-          errors: [
-            {
-              field: 'username',
-              message: 'User not found',
-            },
-          ],
-        };
-      }
-
-      const valid = await argon2.verify(user.password, options.password);
-      if (!valid) {
-        return {
-          errors: [
-            {
-              field: 'password',
-              message: 'Invalid password',
-            },
-          ],
-        };
-      }
-
-      console.log('User logged in successfully');
-
-      if (!req.session.userId) {
-        req.session.userId = user.id;
-      }
+    const user = await em.findOne(User, {
+      username: options.username,
+    });
+    if (!user) {
       return {
-        user,
+        errors: [
+          {
+            field: 'username',
+            message: 'User not found',
+          },
+        ],
       };
     }
+
+    const valid = await argon2.verify(user.password, options.password);
+    if (!valid) {
+      return {
+        errors: [
+          {
+            field: 'password',
+            message: 'Invalid password',
+          },
+        ],
+      };
+    }
+
+    req.session.userId = user.id;
+    console.log('User logged in successfully');
+    console.log(req.session);
+    return {
+      user,
+    };
   }
 }

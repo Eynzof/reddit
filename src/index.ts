@@ -53,31 +53,26 @@ const main = async () => {
       credentials: true,
     }),
   );
-
+  // 构造 Redis 客户端
   // 相当于 let RedisStore = require("connect-redis")(session)
   const RedisStore = connectRedis(session);
-
-  // 构造 Redis 客户端
-  const url = 'redis://default:redispw@localhost:55000';
   const redisClient = redis.createClient({
     legacyMode: true,
-    url: url,
+    url: 'redis://default:redispw@localhost:55000',
   });
 
   // [node.js - Redis NodeJs server error,client is closed - Stack Overflow](https://stackoverflow.com/questions/70185436/redis-nodejs-server-error-client-is-closed)
   await redisClient.connect();
 
-  app.set('trust proxy', true);
+  // app.set('trust proxy', true);
 
   app.use(
     session({
+      name: 'qid',
       store: new RedisStore({
         client: redisClient,
+        disableTouch: true,
       }),
-      secret: 'masoniclab',
-      resave: false,
-      saveUninitialized: false,
-      name: 'qid',
       cookie: {
         // keep this false, or the cookie won't be saved to local browser,
         // which caused the view counter not working properly
@@ -89,25 +84,23 @@ const main = async () => {
         // you should never use none anyway
         sameSite: 'lax',
       },
+      secret: 'masoniclab',
+      resave: false,
+      saveUninitialized: false,
     }),
   );
 
   try {
     const { typeDefs, resolvers } = await buildTypeDefsAndResolvers({
-      resolvers: [
-        BookResolver,
-        AuthorResolver,
-        HelloResolver,
-        PostResolver,
-        UserResolver,
-      ],
+      resolvers: [HelloResolver, PostResolver, UserResolver],
+      validate: false,
     });
 
     const server = new ApolloServer({
       typeDefs,
       resolvers,
-      csrfPrevention: true,
-      cache: 'bounded',
+      // csrfPrevention: true,
+      // cache: 'bounded',
       plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
       context: ({ req, res }): MyContext => ({
         em: orm.em,
@@ -116,16 +109,15 @@ const main = async () => {
       }),
     });
 
-    const port = 4000;
-
     await server.start();
+
     server.applyMiddleware({
       app,
       cors: false,
     });
 
-    app.listen(port, () => {
-      console.log(`server listening on port ${port}`);
+    app.listen(4000, () => {
+      console.log(`server listening on port 4000`);
     });
   } catch (error) {
     console.error('📌 Could not start server', error);
