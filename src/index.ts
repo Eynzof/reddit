@@ -8,8 +8,6 @@ import { MikroORM } from '@mikro-orm/core';
 import { PublisherType } from 'contracts/enums/publisherType.enum';
 import cors from 'cors';
 import ormConfig from 'orm.config';
-import { AuthorResolver } from 'resolvers/author.resolver';
-import { BookResolver } from 'resolvers/book.resolver';
 import { buildTypeDefsAndResolvers, registerEnumType } from 'type-graphql';
 import { MyContext } from 'utils/interfaces/context.interface';
 import { HelloResolver } from 'resolvers/hello.resolver';
