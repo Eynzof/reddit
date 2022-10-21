@@ -3,7 +3,6 @@ import {
   Arg,
   Ctx,
   Field,
-  InputType,
   Mutation,
   ObjectType,
   Query,
@@ -12,14 +11,8 @@ import {
 import argon2 from 'argon2';
 import { MyContext } from 'utils/interfaces/context.interface';
 import { COOKIE_NAME } from '../constants';
-
-@InputType()
-class UsernamepasswordingInput {
-  @Field()
-  username: string;
-  @Field(() => String)
-  password: string;
-}
+import { UsernamepasswordingInput } from './UsernamepasswordingInput';
+import { validateRegister } from 'utils/validateRegister';
 
 @ObjectType()
 class UserResponse {
@@ -59,36 +52,19 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async register(
-    @Arg('options', () => UsernamepasswordingInput)
-    options: UsernamepasswordingInput,
+    @Arg('options') options: UsernamepasswordingInput,
     @Ctx() { req, res, em }: MyContext,
   ): Promise<UserResponse> {
-    if (options.username.length <= 3) {
-      return {
-        errors: [
-          {
-            field: 'username',
-            message: 'Username must be more than 3 characters',
-          },
-        ],
-      };
-    }
-
-    if (options.password.length <= 3) {
-      return {
-        errors: [
-          {
-            field: 'password',
-            message: 'Password must be more than 3 characters',
-          },
-        ],
-      };
+    const errors = validateRegister(options);
+    if (errors) {
+      return { errors };
     }
 
     const hashedPassword = await argon2.hash(options.password);
     const user = em.create(User, {
       username: options.username,
       password: hashedPassword,
+      email: options.email,
     });
     em.persist(user);
     try {
@@ -122,12 +98,18 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async login(
-    @Arg('options') options: UsernamepasswordingInput,
+    @Arg('usernameOrEmail') usernameOrEmail: string,
+    @Arg('password') password: string,
     @Ctx() { em, req }: MyContext,
   ): Promise<UserResponse> {
-    const user = await em.findOne(User, {
-      username: options.username,
-    });
+    const user = await em.findOne(
+      User,
+      usernameOrEmail.includes('@')
+        ? {
+            email: usernameOrEmail,
+          }
+        : { username: usernameOrEmail },
+    );
     if (!user) {
       return {
         errors: [
