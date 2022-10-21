@@ -11,7 +11,6 @@ import {
 } from 'type-graphql';
 import argon2 from 'argon2';
 import { MyContext } from 'utils/interfaces/context.interface';
-import e, { request } from 'express';
 import { COOKIE_NAME } from '../constants';
 
 @InputType()
@@ -40,6 +39,12 @@ class FieldError {
 
 @Resolver()
 export class UserResolver {
+  @Mutation(() => Boolean)
+  async forgotPassword(@Arg('email') email: string, @Ctx() { em }: MyContext) {
+    // const user = await em.findOne(User, { email });
+    return true;
+  }
+
   @Query(() => User, { nullable: true })
   async me(@Ctx() { req, res, em }: MyContext) {
     // not logged in

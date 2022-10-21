@@ -22,6 +22,8 @@ import connectRedis from 'connect-redis';
 
 import * as redis from 'redis';
 import { COOKIE_NAME, __prod__ } from './constants';
+import { sendEmail } from 'utils/sendEmail';
+import { User } from 'entities/user.entity';
 
 // TODO: create service for this
 registerEnumType(PublisherType, {
@@ -30,18 +32,24 @@ registerEnumType(PublisherType, {
 });
 
 const main = async () => {
-  let orm = null;
-  try {
-    orm = await MikroORM.init(ormConfig);
-    const migrator = orm.getMigrator();
-    const migrations = await migrator.getPendingMigrations();
-    if (migrations && migrations.length > 0) {
-      await migrator.up();
-    }
-  } catch (error) {
-    console.error('📌 Could not connect to the database', error);
-    throw Error(error);
-  }
+  sendEmail('bob@bob.com', 'hello');
+
+  const orm = await MikroORM.init(ormConfig);
+
+  await orm.em.nativeDelete(User, {});
+  const migrator = await orm.getMigrator();
+
+  await migrator.up();
+  // try {
+  //   const migrator = orm.getMigrator();
+  //   const migrations = await migrator.getPendingMigrations();
+  //   if (migrations && migrations.length > 0) {
+  //     await migrator.up();
+  //   }
+  // } catch (error) {
+  //   console.error('📌 Could not connect to the database', error);
+  //   throw Error(error);
+  // }
 
   const app = express();
   // 这一行允许 ApolloStudio 接管

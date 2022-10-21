@@ -16,8 +16,11 @@ export class User {
   @Property({ type: 'text' })
   password!: string;
 
+  @Property({ type: 'text' })
+  email!: string;
+
   @Field()
-  @Property({ default: 'NOW()' })
+  @Property({ default: 'NOW()', unique: true })
   createdAt: Date = new Date();
 
   @Field()
