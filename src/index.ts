@@ -12,7 +12,7 @@ import { buildTypeDefsAndResolvers, registerEnumType } from 'type-graphql';
 import { MyContext } from 'utils/interfaces/context.interface';
 import { HelloResolver } from 'resolvers/hello.resolver';
 import { ApolloServer } from 'apollo-server-express';
-
+import { ApolloServerPluginInlineTrace } from 'apollo-server-core';
 import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
 import { PostResolver } from 'resolvers/post.resolver';
 import { UserResolver } from 'resolvers/user.resolver';
@@ -36,7 +36,7 @@ const main = async () => {
 
   const orm = await MikroORM.init(ormConfig);
 
-  await orm.em.nativeDelete(User, {});
+  // await orm.em.nativeDelete(User, {});
   const migrator = await orm.getMigrator();
 
   await migrator.up();
@@ -55,7 +55,7 @@ const main = async () => {
   // 这一行允许 ApolloStudio 接管
   app.use(
     cors({
-      origin: 'http://localhost:3000',
+      origin: ['http://localhost:3000', 'https://studio.apollographql.com'],
       credentials: true,
     }),
   );
@@ -107,7 +107,7 @@ const main = async () => {
       resolvers,
       // csrfPrevention: true,
       // cache: 'bounded',
-      plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
+      plugins: [ApolloServerPluginInlineTrace()],
       context: ({ req, res }): MyContext => ({
         em: orm.em,
         req,

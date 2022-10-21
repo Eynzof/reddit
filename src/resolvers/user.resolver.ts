@@ -11,8 +11,9 @@ import {
 import argon2 from 'argon2';
 import { MyContext } from 'utils/interfaces/context.interface';
 import { COOKIE_NAME } from '../constants';
-import { UsernamepasswordingInput } from './UsernamepasswordingInput';
+
 import { validateRegister } from 'utils/validateRegister';
+import { UsernamePasswordInput } from './UsernamePasswordInput';
 
 @ObjectType()
 class UserResponse {
@@ -52,14 +53,13 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async register(
-    @Arg('options') options: UsernamepasswordingInput,
+    @Arg('options') options: UsernamePasswordInput,
     @Ctx() { req, res, em }: MyContext,
   ): Promise<UserResponse> {
     const errors = validateRegister(options);
     if (errors) {
       return { errors };
     }
-
     const hashedPassword = await argon2.hash(options.password);
     const user = em.create(User, {
       username: options.username,
@@ -68,7 +68,7 @@ export class UserResolver {
     });
     em.persist(user);
     try {
-      em.flush();
+      await em.flush();
     } catch (error) {
       if (!error) {
         console.log('test');
@@ -105,37 +105,33 @@ export class UserResolver {
     const user = await em.findOne(
       User,
       usernameOrEmail.includes('@')
-        ? {
-            email: usernameOrEmail,
-          }
+        ? { email: usernameOrEmail }
         : { username: usernameOrEmail },
     );
     if (!user) {
       return {
         errors: [
           {
-            field: 'username',
-            message: 'User not found',
+            field: 'usernameOrEmail',
+            message: "that username doesn't exist",
           },
         ],
       };
     }
-
-    const valid = await argon2.verify(user.password, options.password);
+    const valid = await argon2.verify(user.password, password);
     if (!valid) {
       return {
         errors: [
           {
             field: 'password',
-            message: 'Invalid password',
+            message: 'incorrect password',
           },
         ],
       };
     }
 
     req.session.userId = user.id;
-    console.log('User logged in successfully');
-    console.log(req.session);
+
     return {
       user,
     };
@@ -150,7 +146,6 @@ export class UserResolver {
           resolve(false);
           return;
         }
-
         resolve(true);
       }),
     );
