@@ -1,0 +1,3 @@
+[submodule "reddit-web"]
+	path = reddit-web
+	url = http://git.masoniclab.com/Masonic/Workspace-enzo/_git/reddit-web
