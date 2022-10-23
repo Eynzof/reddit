@@ -14,6 +14,7 @@ import { COOKIE_NAME } from '../constants';
 
 import { validateRegister } from 'utils/validateRegister';
 import { UsernamePasswordInput } from './UsernamePasswordInput';
+import { sendEmail } from 'utils/sendEmail';
 
 @ObjectType()
 class UserResponse {
@@ -35,7 +36,19 @@ class FieldError {
 export class UserResolver {
   @Mutation(() => Boolean)
   async forgotPassword(@Arg('email') email: string, @Ctx() { em }: MyContext) {
-    // const user = await em.findOne(User, { email });
+    const user = await em.findOne(User, { email });
+    if (!user) {
+      // the email is not in the db
+      return true;
+    }
+
+    const token = 'aioshuok';
+
+    await sendEmail(
+      email,
+      `<a href="http://localhost:3000/change-password/${token}">reset password</a>`,
+    );
+
     return true;
   }
 
