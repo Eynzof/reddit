@@ -112,6 +112,7 @@ const main = async () => {
         em: orm.em,
         req,
         res,
+        redis,
       }),
     });
 

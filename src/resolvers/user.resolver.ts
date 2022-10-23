@@ -10,12 +10,12 @@ import {
 } from 'type-graphql';
 import argon2 from 'argon2';
 import { MyContext } from 'utils/interfaces/context.interface';
-import { COOKIE_NAME } from '../constants';
+import { COOKIE_NAME, FORGOT_PASSWORD_PREFIX } from '../constants';
 
 import { validateRegister } from 'utils/validateRegister';
 import { UsernamePasswordInput } from './UsernamePasswordInput';
 import { sendEmail } from 'utils/sendEmail';
-
+import { v4 } from 'uuid';
 @ObjectType()
 class UserResponse {
   @Field(() => [FieldError], { nullable: true })
@@ -35,14 +35,24 @@ class FieldError {
 @Resolver()
 export class UserResolver {
   @Mutation(() => Boolean)
-  async forgotPassword(@Arg('email') email: string, @Ctx() { em }: MyContext) {
+  async forgotPassword(
+    @Arg('email') email: string,
+    @Ctx() { em, redis }: MyContext,
+  ) {
     const user = await em.findOne(User, { email });
     if (!user) {
       // the email is not in the db
       return true;
     }
 
-    const token = 'aioshuok';
+    const token = v4();
+
+    redis.set(
+      FORGOT_PASSWORD_PREFIX + token,
+      user.id,
+      'EX',
+      1000 * 60 * 60 * 2,
+    );
 
     await sendEmail(
       email,
