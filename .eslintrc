@@ -6,7 +6,7 @@
     "sourceType": "module",
     "project": "tsconfig.json"
   },
-  "ignorePatterns": "src/migrations/",
+  "ignorePatterns": ["src/migrations/", "reddit-web"],
   "plugins": ["@typescript-eslint", "prettier"],
   "extends": [
     "prettier",
