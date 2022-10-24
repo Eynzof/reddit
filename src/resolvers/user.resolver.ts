@@ -16,6 +16,7 @@ import { validateRegister } from 'utils/validateRegister';
 import { UsernamePasswordInput } from './UsernamePasswordInput';
 import { sendEmail } from 'utils/sendEmail';
 import { v4 } from 'uuid';
+import { Redis } from 'ioredis';
 @ObjectType()
 class UserResponse {
   @Field(() => [FieldError], { nullable: true })
@@ -34,6 +35,25 @@ class FieldError {
 
 @Resolver()
 export class UserResolver {
+  async changePassword(
+    @Arg('token') token: string,
+    @Arg('newPassword') newPassword: string,
+    @Ctx() { em, redis }: MyContext,
+  ) {
+    if (newPassword.length <= 2) {
+      return [
+        {
+          field: 'password',
+          message: 'length must be greater than 2',
+        },
+      ];
+    }
+
+    const userId = redis.get(FORGOT_PASSWORD_PREFIX + token);
+
+
+  }
+
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg('email') email: string,
