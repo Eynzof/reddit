@@ -35,6 +35,7 @@ class FieldError {
 
 @Resolver()
 export class UserResolver {
+  @Mutation(() => UserResponse)
   async changePassword(
     @Arg('token') token: string,
     @Arg('newPassword') newPassword: string,
