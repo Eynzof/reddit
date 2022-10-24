@@ -1,4 +1,10 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  Column,
+  CreateDateColumn,
+} from 'typeorm';
 import { Field, ObjectType } from 'type-graphql';
 // import { v4 } from 'uuid';
 
@@ -6,18 +12,18 @@ import { Field, ObjectType } from 'type-graphql';
 @Entity()
 export class Post {
   @Field()
-  @PrimaryKey()
+  @PrimaryGeneratedColumn()
   id!: number;
 
   @Field()
-  @Property()
+  @Column()
   title!: string;
 
   @Field()
-  @Property({ default: 'NOW()' })
+  @CreateDateColumn()
   createdAt: Date = new Date();
 
   @Field()
-  @Property({ default: 'NOW()', onUpdate: () => new Date() })
+  @UpdateDateColumn()
   updatedAt: Date = new Date();
 }
