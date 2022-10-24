@@ -4,10 +4,8 @@ import 'reflect-metadata';
 import express from 'express';
 import 'express-async-errors';
 
-import { MikroORM } from '@mikro-orm/core';
 import { PublisherType } from 'contracts/enums/publisherType.enum';
 import cors from 'cors';
-import ormConfig from 'orm.config';
 import { buildTypeDefsAndResolvers, registerEnumType } from 'type-graphql';
 import { MyContext } from 'utils/interfaces/context.interface';
 import { HelloResolver } from 'resolvers/hello.resolver';
@@ -22,27 +20,23 @@ import connectRedis from 'connect-redis';
 import Redis from 'ioredis';
 import { COOKIE_NAME, __prod__ } from './constants';
 import { sendEmail } from 'utils/sendEmail';
-import { createConnection, DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
+import { Post } from 'entities/post.entity';
+import { User } from 'entities/user.entity';
 
-// TODO: create service for this
-registerEnumType(PublisherType, {
-  name: 'PublisherType',
-  description: 'Type of the publisher',
+export const AppDataSource = new DataSource({
+  type: 'postgres',
+  host: 'localhost',
+  port: 5432,
+  username: 'postgres',
+  password: 'postgres',
+  database: 'reddit2',
+  entities: [Post, User],
+  synchronize: true,
+  logging: true,
 });
 
 const main = async () => {
-  const AppDataSource = new DataSource({
-    type: 'postgres',
-    host: 'localhost',
-    port: 5432,
-    username: 'postgres',
-    password: 'postgres',
-    database: 'reddit2',
-    entities: [],
-    synchronize: true,
-    logging: true,
-  });
-
   AppDataSource.initialize()
     .then(() => {
       // here you can start to work with your database
@@ -50,23 +44,6 @@ const main = async () => {
     .catch((error) => console.log(error));
 
   // sendEmail('bob@bob.com', 'hello');
-
-  const orm = await MikroORM.init(ormConfig);
-
-  // await orm.em.nativeDelete(User, {});
-  const migrator = await orm.getMigrator();
-
-  await migrator.up();
-  // try {
-  //   const migrator = orm.getMigrator();
-  //   const migrations = await migrator.getPendingMigrations();
-  //   if (migrations && migrations.length > 0) {
-  //     await migrator.up();
-  //   }
-  // } catch (error) {
-  //   console.error('📌 Could not connect to the database', error);
-  //   throw Error(error);
-  // }
 
   const app = express();
   // 这一行允许 ApolloStudio 接管
@@ -80,16 +57,6 @@ const main = async () => {
   // 相当于 let RedisStore = require("connect-redis")(session)
   const RedisStore = connectRedis(session);
   const redis = new Redis('redis://default:redispw@localhost:55000/');
-
-  // const redisClient = redis.createClient({
-  //   legacyMode: true,
-  //   url: 'redis://default:redispw@localhost:55000',
-  // });
-
-  // [node.js - Redis NodeJs server error,client is closed - Stack Overflow](https://stackoverflow.com/questions/70185436/redis-nodejs-server-error-client-is-closed)
-  // await redis.connect();
-
-  // app.set('trust proxy', true);
 
   app.use(
     session({
@@ -128,7 +95,6 @@ const main = async () => {
       // cache: 'bounded',
       plugins: [ApolloServerPluginInlineTrace()],
       context: ({ req, res }): MyContext => ({
-        em: orm.em,
         req,
         res,
         redis,

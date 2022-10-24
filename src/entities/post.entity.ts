@@ -4,13 +4,14 @@ import {
   UpdateDateColumn,
   Column,
   CreateDateColumn,
+  BaseEntity,
 } from 'typeorm';
 import { Field, ObjectType } from 'type-graphql';
 // import { v4 } from 'uuid';
 
 @ObjectType()
 @Entity()
-export class Post {
+export class Post extends BaseEntity {
   @Field()
   @PrimaryGeneratedColumn()
   id!: number;
@@ -21,9 +22,9 @@ export class Post {
 
   @Field()
   @CreateDateColumn()
-  createdAt: Date = new Date();
+  createdAt: Date;
 
   @Field()
   @UpdateDateColumn()
-  updatedAt: Date = new Date();
+  updatedAt: Date;
 }

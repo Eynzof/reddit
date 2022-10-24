@@ -4,23 +4,24 @@ import {
   UpdateDateColumn,
   Column,
   CreateDateColumn,
+  BaseEntity,
 } from 'typeorm';
 import { ObjectType, Field } from 'type-graphql';
 
 @ObjectType()
 @Entity()
-export class User {
+export class User extends BaseEntity {
   @Field()
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Field(() => String)
+  @Field()
   @CreateDateColumn()
   createdAt: Date;
 
-  @Field(() => String)
+  @Field()
   @UpdateDateColumn()
-  updatedAt = new Date();
+  updatedAt: Date;
 
   @Field()
   @Column({ unique: true })
