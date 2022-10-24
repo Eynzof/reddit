@@ -16,7 +16,6 @@ import { validateRegister } from 'utils/validateRegister';
 import { UsernamePasswordInput } from './UsernamePasswordInput';
 import { sendEmail } from 'utils/sendEmail';
 import { v4 } from 'uuid';
-import { Redis } from 'ioredis';
 @ObjectType()
 class UserResponse {
   @Field(() => [FieldError], { nullable: true })
@@ -45,8 +44,8 @@ export class UserResolver {
       return {
         errors: [
           {
-            field: 'password',
-            message: 'length must be greater than 2',
+            field: 'newPassword',
+            message: 'password must be at least 2 characters',
           },
         ],
       };
