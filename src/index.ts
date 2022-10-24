@@ -13,17 +13,15 @@ import { MyContext } from 'utils/interfaces/context.interface';
 import { HelloResolver } from 'resolvers/hello.resolver';
 import { ApolloServer } from 'apollo-server-express';
 import { ApolloServerPluginInlineTrace } from 'apollo-server-core';
-import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
 import { PostResolver } from 'resolvers/post.resolver';
 import { UserResolver } from 'resolvers/user.resolver';
 
 import session from 'express-session';
 import connectRedis from 'connect-redis';
 
-import * as redis from 'redis';
+import Redis from 'ioredis';
 import { COOKIE_NAME, __prod__ } from './constants';
 import { sendEmail } from 'utils/sendEmail';
-import { User } from 'entities/user.entity';
 
 // TODO: create service for this
 registerEnumType(PublisherType, {
@@ -62,13 +60,15 @@ const main = async () => {
   // 构造 Redis 客户端
   // 相当于 let RedisStore = require("connect-redis")(session)
   const RedisStore = connectRedis(session);
-  const redisClient = redis.createClient({
-    legacyMode: true,
-    url: 'redis://default:redispw@localhost:55000',
-  });
+  const redis = new Redis('redis://default:redispw@localhost:55000/');
+
+  // const redisClient = redis.createClient({
+  //   legacyMode: true,
+  //   url: 'redis://default:redispw@localhost:55000',
+  // });
 
   // [node.js - Redis NodeJs server error,client is closed - Stack Overflow](https://stackoverflow.com/questions/70185436/redis-nodejs-server-error-client-is-closed)
-  await redisClient.connect();
+  // await redis.connect();
 
   // app.set('trust proxy', true);
 
@@ -76,7 +76,7 @@ const main = async () => {
     session({
       name: COOKIE_NAME,
       store: new RedisStore({
-        client: redisClient,
+        client: redis,
         disableTouch: true,
       }),
       cookie: {
@@ -112,6 +112,7 @@ const main = async () => {
         em: orm.em,
         req,
         res,
+        redis,
       }),
     });
 
