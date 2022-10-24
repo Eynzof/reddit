@@ -22,6 +22,7 @@ import connectRedis from 'connect-redis';
 import Redis from 'ioredis';
 import { COOKIE_NAME, __prod__ } from './constants';
 import { sendEmail } from 'utils/sendEmail';
+import { createConnection, DataSource } from 'typeorm';
 
 // TODO: create service for this
 registerEnumType(PublisherType, {
@@ -30,7 +31,25 @@ registerEnumType(PublisherType, {
 });
 
 const main = async () => {
-  sendEmail('bob@bob.com', 'hello');
+  const AppDataSource = new DataSource({
+    type: 'postgres',
+    host: 'localhost',
+    port: 5432,
+    username: 'postgres',
+    password: 'postgres',
+    database: 'reddit2',
+    entities: [],
+    synchronize: true,
+    logging: true,
+  });
+
+  AppDataSource.initialize()
+    .then(() => {
+      // here you can start to work with your database
+    })
+    .catch((error) => console.log(error));
+
+  // sendEmail('bob@bob.com', 'hello');
 
   const orm = await MikroORM.init(ormConfig);
 
