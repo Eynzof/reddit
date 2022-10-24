@@ -71,6 +71,7 @@ export class UserResolver {
     const userIdNum = parseInt(userId);
     let user;
     try {
+      console.log('line 74');
       user = await User.findOneBy({
         id: userIdNum,
       });
@@ -96,7 +97,7 @@ export class UserResolver {
       },
     );
     // token is disposed
-    redis.del(key);
+    // redis.del(key);
     req.session.userId = user.id;
 
     return { user };
@@ -107,6 +108,7 @@ export class UserResolver {
     @Arg('email') email: string,
     @Ctx() { redis }: MyContext,
   ) {
+    console.log('line 111');
     const user = await User.findOneBy({ email });
     if (!user) {
       // the email is not in the db
@@ -136,8 +138,10 @@ export class UserResolver {
     if (!req.session.userId) {
       return null;
     }
-
-    return User.findOneBy({ id: parseInt(req.session.id) });
+    console.log('line 141');
+    console.log(req.session.userId);
+    console.log(typeof req.session.userId);
+    return User.findOneBy({ id: req.session.userId });
   }
 
   @Mutation(() => UserResponse)
@@ -198,6 +202,7 @@ export class UserResolver {
     @Arg('password') password: string,
     @Ctx() { req }: MyContext,
   ): Promise<UserResponse> {
+    console.log('line 203');
     const user = await User.findOneBy(
       usernameOrEmail.includes('@')
         ? { email: usernameOrEmail }
