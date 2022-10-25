@@ -1,3 +1,3 @@
 
 
-`docker-compose up --build`
+`ddocker-compose up --build`
