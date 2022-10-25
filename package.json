@@ -9,7 +9,7 @@
     "build": "tsc",
     "dev": "cross-env NODE_DEV=true ts-node-dev -r tsconfig-paths/register src/index.ts",
     "gen-env-types": "gen-env-types .env -o src/utils/types/env.d.ts -e .",
-    "start": "npm run build&& cross-env NODE_PATH=./dist/src DEBUG=express-session node dist/src/index.js",
+    "start": "npm run build&& cross-env NODE_PATH=./dist DEBUG=express-session node dist/index.js",
     "node-d": "cross-env NODE_PATH=./dist/src node-dev dist/src/index.js",
     "lint": "eslint src/**/*.ts --fix",
     "pret": "prettier --config .prettierrc 'src/**/*.ts' --write",
