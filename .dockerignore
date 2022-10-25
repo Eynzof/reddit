@@ -1,0 +1,7 @@
+.git
+node_modules
+dist
+reddit-web
+target
+tests
+yarn.lock

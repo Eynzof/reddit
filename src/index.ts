@@ -16,28 +16,13 @@ import {
 import { PostResolver } from 'resolvers/post.resolver';
 import { UserResolver } from 'resolvers/user.resolver';
 
-import session from 'express-session';
-import connectRedis from 'connect-redis';
-
-import Redis from 'ioredis';
 import { COOKIE_NAME, __prod__ } from './constants';
 import { sendEmail } from 'utils/sendEmail';
-import { DataSource } from 'typeorm';
-import { Post } from 'entities/post.entity';
-import { User } from 'entities/user.entity';
-import { createRedisSession } from 'middleware/redisSession';
 
-export const AppDataSource = new DataSource({
-  type: 'postgres',
-  host: 'localhost',
-  port: 5432,
-  username: 'postgres',
-  password: 'postgres',
-  database: 'reddit2',
-  entities: [Post, User],
-  synchronize: true,
-  logging: true,
-});
+import { createRedisSession } from 'database/redis';
+import { AppDataSource } from 'database/postgres';
+
+export let DataSource;
 
 const main = async () => {
   AppDataSource.initialize()
@@ -46,14 +31,13 @@ const main = async () => {
     })
     .catch((error) => console.log(error));
 
+  DataSource = AppDataSource;
   // sendEmail('bob@bob.com', 'hello');
 
   const app = express();
 
   // setup redis connection
-  const { session, redis } = createRedisSession(
-    'redis://default:redispw@localhost:6379/',
-  );
+  const { session, redis } = createRedisSession();
   app.use(session);
 
   try {
