@@ -31,7 +31,7 @@ services:
     volumes:
       - cache:/data
     restart: unless-stopped
-  reddit-postgres-api:
+  api:
     stdin_open: true
     build:
       context: .
