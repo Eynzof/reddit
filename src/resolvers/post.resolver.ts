@@ -1,4 +1,5 @@
 import { Post } from 'entities/post.entity';
+import { isAuth } from 'middleware/isAuth';
 import {
   Arg,
   Ctx,
@@ -7,6 +8,7 @@ import {
   Query,
   Resolver,
   InputType,
+  UseMiddleware,
 } from 'type-graphql';
 import { MyContext } from 'utils/interfaces/context.interface';
 
@@ -29,6 +31,7 @@ export class PostResolver {
   }
 
   @Mutation(() => Post)
+  @UseMiddleware(isAuth)
   public async createPost(
     @Arg('input') input: PostInput,
     @Ctx() { req }: MyContext,
