@@ -16,6 +16,8 @@ import { validateRegister } from 'utils/validateRegister';
 import { UsernamePasswordInput } from './UsernamePasswordInput';
 import { sendEmail } from 'utils/sendEmail';
 import { v4 } from 'uuid';
+import { AppDataSource } from 'index';
+
 @ObjectType()
 class UserResponse {
   @Field(() => [FieldError], { nullable: true })
@@ -38,7 +40,7 @@ export class UserResolver {
   async changePassword(
     @Arg('token') token: string,
     @Arg('newPassword') newPassword: string,
-    @Ctx() { em, redis, req }: MyContext,
+    @Ctx() { redis, req }: MyContext,
   ): Promise<UserResponse> {
     if (newPassword.length <= 2) {
       return {
@@ -65,7 +67,17 @@ export class UserResolver {
       };
     }
 
-    const user = await em.findOne(User, { id: parseInt(userId) });
+    console.log('userId: ' + userId);
+    const userIdNum = parseInt(userId);
+    let user;
+    try {
+      console.log('line 74');
+      user = await User.findOneBy({
+        id: userIdNum,
+      });
+    } catch (error) {
+      console.log(error);
+    }
 
     if (!user) {
       return {
@@ -78,22 +90,26 @@ export class UserResolver {
       };
     }
 
-    user.password = await argon2.hash(newPassword);
-    em.persistAndFlush(user);
-
+    await User.update(
+      { id: userIdNum },
+      {
+        password: await argon2.hash(newPassword),
+      },
+    );
+    // token is disposed
+    // redis.del(key);
     req.session.userId = user.id;
 
-    // token is disposed
-    redis.del(key);
     return { user };
   }
 
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg('email') email: string,
-    @Ctx() { em, redis }: MyContext,
+    @Ctx() { redis }: MyContext,
   ) {
-    const user = await em.findOne(User, { email });
+    console.log('line 111');
+    const user = await User.findOneBy({ email });
     if (!user) {
       // the email is not in the db
       return true;
@@ -117,43 +133,50 @@ export class UserResolver {
   }
 
   @Query(() => User, { nullable: true })
-  async me(@Ctx() { req, res, em }: MyContext) {
+  me(@Ctx() { req, res }: MyContext) {
     // not logged in
     if (!req.session.userId) {
-      console.log('User not logged in');
       return null;
     }
-
-    const user = await em.findOne(User, { id: req.session.userId });
-    return user;
+    console.log('line 141');
+    console.log(req.session.userId);
+    console.log(typeof req.session.userId);
+    return User.findOneBy({ id: req.session.userId });
   }
 
   @Mutation(() => UserResponse)
   async register(
     @Arg('options') options: UsernamePasswordInput,
-    @Ctx() { req, res, em }: MyContext,
+    @Ctx() { req }: MyContext,
   ): Promise<UserResponse> {
     const errors = validateRegister(options);
     if (errors) {
       return { errors };
     }
     const hashedPassword = await argon2.hash(options.password);
-    const user = em.create(User, {
-      username: options.username,
-      password: hashedPassword,
-      email: options.email,
-    });
-    em.persist(user);
+
+    console.log('here');
+    let user;
     try {
-      await em.flush();
+      const r = await AppDataSource.createQueryBuilder()
+        .insert()
+        .into(User)
+        .values({
+          username: options.username,
+          email: options.email,
+          password: hashedPassword,
+        })
+        .returning('*')
+        .execute();
+      console.log('--------------------------------');
+
+      console.log(r);
+      user = r.raw[0];
     } catch (error) {
       if (!error) {
         console.log('test');
       }
-      if (
-        error.code == '23505' ||
-        error.detail.includes('UniqueConstraintViolationException')
-      ) {
+      if (error.code == '23505' || error.detail.includes('duplicate key')) {
         // duplicate username
         return {
           errors: [
@@ -177,10 +200,10 @@ export class UserResolver {
   async login(
     @Arg('usernameOrEmail') usernameOrEmail: string,
     @Arg('password') password: string,
-    @Ctx() { em, req }: MyContext,
+    @Ctx() { req }: MyContext,
   ): Promise<UserResponse> {
-    const user = await em.findOne(
-      User,
+    console.log('line 203');
+    const user = await User.findOneBy(
       usernameOrEmail.includes('@')
         ? { email: usernameOrEmail }
         : { username: usernameOrEmail },

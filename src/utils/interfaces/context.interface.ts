@@ -5,6 +5,6 @@ import { Redis } from 'ioredis';
 export interface MyContext {
   req: Request & { session?: Express.Session };
   res: Response;
-  em: EntityManager<IDatabaseDriver<Connection>>;
+  // em: EntityManager<IDatabaseDriver<Connection>>;
   redis: Redis;
 }
