@@ -25,6 +25,7 @@ import { sendEmail } from 'utils/sendEmail';
 import { DataSource } from 'typeorm';
 import { Post } from 'entities/post.entity';
 import { User } from 'entities/user.entity';
+import { createRedisSession } from 'middleware/redisSession';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -49,34 +50,11 @@ const main = async () => {
 
   const app = express();
 
-  // 构造 Redis 客户端
-  // 相当于 let RedisStore = require("connect-redis")(session)
-  const RedisStore = connectRedis(session);
-  const redis = new Redis('redis://default:redispw@localhost:6379/');
-
-  app.use(
-    session({
-      name: COOKIE_NAME,
-      store: new RedisStore({
-        client: redis,
-        disableTouch: true,
-      }),
-      cookie: {
-        // keep this false, or the cookie won't be saved to local browser,
-        // which caused the view counter not working properly
-        secure: false, // if true: only transmit cookie over https, in prod, always activate this
-        httpOnly: true, // if true: prevents client side JS from reading the cookie
-        maxAge: 1000 * 60 * 30, // session max age in milliseconds
-        // explicitly set cookie to lax
-        // to make sure that all cookies accept it
-        // you should never use none anyway
-        sameSite: 'lax',
-      },
-      secret: 'masoniclab',
-      resave: false,
-      saveUninitialized: false,
-    }),
+  // setup redis connection
+  const { session, redis } = createRedisSession(
+    'redis://default:redispw@localhost:6379/',
   );
+  app.use(session);
 
   try {
     const { typeDefs, resolvers } = await buildTypeDefsAndResolvers({
@@ -89,7 +67,7 @@ const main = async () => {
       resolvers,
       // csrfPrevention: true,
       // cache: 'bounded',
-      // 直接在 localhost 嵌入 apollo studio 的内容，形同graphql playground
+      // 直接在 localhost 嵌入 apollo studio 的内容，形同graphql playgrounds
       plugins: [ApolloServerPluginLandingPageLocalDefault({ embed: true })],
       context: ({ req, res }): MyContext => ({
         req,
