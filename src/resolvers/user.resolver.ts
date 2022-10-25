@@ -16,7 +16,7 @@ import { validateRegister } from 'utils/validateRegister';
 import { UsernamePasswordInput } from './UsernamePasswordInput';
 import { sendEmail } from 'utils/sendEmail';
 import { v4 } from 'uuid';
-import { AppDataSource } from 'index';
+import { DataSource } from 'index';
 
 @ObjectType()
 class UserResponse {
@@ -158,7 +158,7 @@ export class UserResolver {
     console.log('here');
     let user;
     try {
-      const r = await AppDataSource.createQueryBuilder()
+      const r = await DataSource.createQueryBuilder()
         .insert()
         .into(User)
         .values({

@@ -3,7 +3,11 @@ import connectRedis from 'connect-redis';
 import Redis from 'ioredis';
 import { COOKIE_NAME, __prod__ } from '../constants';
 
-export const createRedisSession = (url: string) => {
+const isProduction = process.env.STATUS === 'production';
+const url = isProduction
+  ? 'redis://default@host.docker.internal:6379/'
+  : 'redis://default:redispw@localhost:6379/';
+export const createRedisSession = () => {
   const RedisStore = connectRedis(session);
   const redis = new Redis(url);
   return {
