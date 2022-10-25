@@ -4,13 +4,15 @@ import 'reflect-metadata';
 import express from 'express';
 import 'express-async-errors';
 
-import { PublisherType } from 'contracts/enums/publisherType.enum';
 import cors from 'cors';
 import { buildTypeDefsAndResolvers, registerEnumType } from 'type-graphql';
 import { MyContext } from 'utils/interfaces/context.interface';
 import { HelloResolver } from 'resolvers/hello.resolver';
 import { ApolloServer } from 'apollo-server-express';
-import { ApolloServerPluginInlineTrace } from 'apollo-server-core';
+import {
+  ApolloServerPluginInlineTrace,
+  ApolloServerPluginLandingPageLocalDefault,
+} from 'apollo-server-core';
 import { PostResolver } from 'resolvers/post.resolver';
 import { UserResolver } from 'resolvers/user.resolver';
 
@@ -46,17 +48,11 @@ const main = async () => {
   // sendEmail('bob@bob.com', 'hello');
 
   const app = express();
-  // 这一行允许 ApolloStudio 接管
-  app.use(
-    cors({
-      origin: ['http://localhost:3000', 'https://studio.apollographql.com'],
-      credentials: true,
-    }),
-  );
+
   // 构造 Redis 客户端
   // 相当于 let RedisStore = require("connect-redis")(session)
   const RedisStore = connectRedis(session);
-  const redis = new Redis('redis://default:redispw@localhost:55000/');
+  const redis = new Redis('redis://default:redispw@localhost:6379/');
 
   app.use(
     session({
@@ -93,7 +89,8 @@ const main = async () => {
       resolvers,
       // csrfPrevention: true,
       // cache: 'bounded',
-      plugins: [ApolloServerPluginInlineTrace()],
+      // 直接在 localhost 嵌入 apollo studio 的内容，形同graphql playground
+      plugins: [ApolloServerPluginLandingPageLocalDefault({ embed: true })],
       context: ({ req, res }): MyContext => ({
         req,
         res,
@@ -102,7 +99,13 @@ const main = async () => {
     });
 
     await server.start();
-
+    // 这一行允许 ApolloStudio 接管
+    app.use(
+      cors({
+        origin: ['http://localhost:3000', 'https://studio.apollographql.com'],
+        credentials: true,
+      }),
+    );
     server.applyMiddleware({
       app,
       cors: false,

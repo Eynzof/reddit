@@ -14,16 +14,9 @@
     "lint": "eslint src/**/*.ts --fix",
     "pret": "prettier --config .prettierrc 'src/**/*.ts' --write",
     "test": "cross-env NODE_DEV=true NODE_ENV=test ts-mocha ./tests/**/*.test.ts --package package.json",
-    "loadFixtures": "yarn test --grep \"should clear database and load fixtures\"",
-    "create:migration": "mikro-orm migration:create"
+    "loadFixtures": "yarn test --grep \"should clear database and load fixtures\""
   },
   "dependencies": {
-    "@mikro-orm/cli": "^5.4.2",
-    "@mikro-orm/core": "^5.4.2",
-    "@mikro-orm/migrations": "^5.4.2",
-    "@mikro-orm/postgresql": "^5.4.2",
-    "@mikro-orm/reflection": "^5.4.2",
-    "@mikro-orm/sql-highlighter": "^1.0.1",
     "@types/chai": "^4.2.12",
     "@types/cors": "^2.8.6",
     "@types/express": "^4.17.14",
