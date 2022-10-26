@@ -1,4 +1,5 @@
 import { Post } from 'entities/post.entity';
+import { DataSource } from 'index';
 import { isAuth } from 'middleware/isAuth';
 import {
   Arg,
@@ -22,8 +23,29 @@ class PostInput {
 @Resolver()
 export class PostResolver {
   @Query(() => [Post])
-  public async posts(): Promise<Post[]> {
-    return Post.find();
+  public async posts(
+    @Arg('limit') limit: number,
+    @Arg('cursor', () => String, { nullable: true }) cursor: string | null,
+  ): Promise<Post[]> {
+    const realLimit = Math.min(limit, 50);
+
+    const qb = await DataSource.getRepository(Post)
+      .createQueryBuilder('p')
+      .take(realLimit)
+      .orderBy('"createdAt"', 'DESC');
+
+    console.log('cursor', cursor);
+
+    const date = new Date(parseInt(cursor));
+
+    console.log('date', date);
+
+    // console.log(typeof cursor);
+
+    if (cursor) {
+      qb.where(' "createdAt" >:cursor', { cursor: new Date(parseInt(cursor)) });
+    }
+    return qb.getMany();
   }
   @Query(() => Post, { nullable: true })
   public async post(@Arg('id') id: number): Promise<Post | undefined> {
