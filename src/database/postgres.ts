@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { User } from 'entities/user.entity';
 import { DataSource } from 'typeorm';
 
+import path from 'path';
 const isProduction = process.env.STATUS === 'production';
 
 export const AppDataSource = new DataSource({
@@ -12,6 +13,7 @@ export const AppDataSource = new DataSource({
   username: 'postgres',
   password: 'postgres',
   database: 'reddit',
+  migrations: [path.join(__dirname, '../migrations/*')],
   entities: [Post, User],
   synchronize: true,
   logging: true,

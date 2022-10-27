@@ -4,23 +4,17 @@ import 'reflect-metadata';
 import express from 'express';
 import 'express-async-errors';
 
-import cors from 'cors';
-import { buildTypeDefsAndResolvers, registerEnumType } from 'type-graphql';
-import { MyContext } from 'utils/interfaces/context.interface';
-import { HelloResolver } from 'resolvers/hello.resolver';
+import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
 import { ApolloServer } from 'apollo-server-express';
-import {
-  ApolloServerPluginInlineTrace,
-  ApolloServerPluginLandingPageLocalDefault,
-} from 'apollo-server-core';
+import cors from 'cors';
+import { HelloResolver } from 'resolvers/hello.resolver';
 import { PostResolver } from 'resolvers/post.resolver';
 import { UserResolver } from 'resolvers/user.resolver';
+import { buildTypeDefsAndResolvers } from 'type-graphql';
+import { MyContext } from 'utils/interfaces/context.interface';
 
-import { COOKIE_NAME, __prod__ } from './constants';
-import { sendEmail } from 'utils/sendEmail';
-
-import { createRedisSession } from 'database/redis';
 import { AppDataSource } from 'database/postgres';
+import { createRedisSession } from 'database/redis';
 
 export let DataSource;
 
@@ -28,10 +22,12 @@ const main = async () => {
   AppDataSource.initialize()
     .then(() => {
       // here you can start to work with your database
+      AppDataSource.runMigrations();
     })
     .catch((error) => console.log(error));
 
   DataSource = AppDataSource;
+
   // sendEmail('bob@bob.com', 'hello');
 
   const app = express();
