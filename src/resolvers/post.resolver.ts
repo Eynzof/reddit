@@ -31,26 +31,24 @@ export class PostResolver {
   ): Promise<Post[]> {
     const realLimit = Math.min(50, limit);
     const postRepository = DataSource.getRepository(Post);
-    const qb = await postRepository
-      .createQueryBuilder('p')
-      .orderBy('"createdAt"', 'DESC')
-      .take(realLimit);
-
     if (cursor) {
-      const d = new Date(cursor);
-      console.log(d);
-      // qb.where('"createdAt" < :cursor', {
-      //   cursor: d,
-      // });
-
       return postRepository.find({
         where: {
-          createdAt: MoreThan(d),
+          createdAt: MoreThan(new Date(cursor)),
+        },
+        take: realLimit,
+        order: {
+          createdAt: 'DESC',
+        },
+      });
+    } else {
+      return postRepository.find({
+        take: realLimit,
+        order: {
+          createdAt: 'DESC',
         },
       });
     }
-
-    return qb.getMany();
   }
 
   @Query(() => Post, { nullable: true })
