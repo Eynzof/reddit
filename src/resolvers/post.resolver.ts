@@ -10,12 +10,13 @@ import {
   Int,
   FieldResolver,
   Root,
+  ObjectType,
 } from 'type-graphql';
 import { isAuth } from '../middleware/isAuth';
 import { Post } from 'entities/post.entity';
 import { MyContext } from 'utils/interfaces/context.interface';
 import { DataSource } from 'index';
-import { MoreThan } from 'typeorm';
+import { LessThan, MoreThan } from 'typeorm';
 @InputType()
 class PostInput {
   @Field()
@@ -24,36 +25,53 @@ class PostInput {
   text: string;
 }
 
+@ObjectType()
+class PaginatedPosts {
+  @Field(() => [Post])
+  posts: Post[];
+  @Field()
+  hasMore: boolean;
+}
+
 @Resolver(Post)
 export class PostResolver {
   @FieldResolver(() => String)
   textSnippet(@Root() root: Post) {
     return root.text.slice(0, 50);
   }
-  @Query(() => [Post])
+  @Query(() => PaginatedPosts)
   async posts(
     @Arg('limit', () => Int) limit: number,
     @Arg('cursor', () => String, { nullable: true }) cursor: string | null,
-  ): Promise<Post[]> {
+  ): Promise<PaginatedPosts> {
     const realLimit = Math.min(50, limit);
+    const realLimitPlusOne = realLimit + 1;
     const postRepository = DataSource.getRepository(Post);
     if (cursor) {
-      return postRepository.find({
+      const posts: Post[] = await postRepository.find({
         where: {
-          createdAt: MoreThan(new Date(cursor)),
+          createdAt: LessThan(new Date(cursor)),
         },
-        take: realLimit,
+        take: realLimitPlusOne,
         order: {
           createdAt: 'DESC',
         },
       });
+      return {
+        posts: posts.slice(0, realLimit),
+        hasMore: posts.length === realLimitPlusOne,
+      };
     } else {
-      return postRepository.find({
-        take: realLimit,
+      const posts: Post[] = await postRepository.find({
+        take: realLimitPlusOne,
         order: {
           createdAt: 'DESC',
         },
       });
+      return {
+        posts: posts.slice(0, realLimit),
+        hasMore: posts.length === realLimitPlusOne,
+      };
     }
   }
 
