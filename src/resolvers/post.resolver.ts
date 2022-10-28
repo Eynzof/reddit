@@ -2,9 +2,7 @@ import { Post } from 'entities/post.entity';
 import { Updoot } from 'entities/updoot.entity';
 import { IDataSource } from 'index';
 import {
-  Arg,
-  Args,
-  Ctx,
+  Arg, Ctx,
   Field,
   FieldResolver,
   InputType,
@@ -14,9 +12,8 @@ import {
   Query,
   Resolver,
   Root,
-  UseMiddleware,
+  UseMiddleware
 } from 'type-graphql';
-import { DataSource } from 'typeorm';
 import { MyContext } from 'utils/interfaces/context.interface';
 import { isAuth } from '../middleware/isAuth';
 @InputType()
@@ -55,8 +52,8 @@ export class PostResolver {
     IDataSource.query(
       `
       update post p 
-      set p.points = p.points + $1 
-      where p.id = $2 
+      set points = points + $1 
+      where id = $2   
       `,
       [realvalue, postId],
     );
@@ -74,7 +71,7 @@ export class PostResolver {
   ): Promise<PaginatedPosts> {
     const realLimit = Math.min(50, limit);
     const realLimitPlusOne = realLimit + 1;
-    const postRepository = IDataSource.getRepository(Post);
+    // const postRepository = IDataSource.getRepository(Post);
 
     const replacements: any[] = [realLimitPlusOne];
     const time_end = new Date(cursor);
