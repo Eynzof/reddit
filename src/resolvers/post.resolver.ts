@@ -102,12 +102,13 @@ export class PostResolver {
   async posts(
     @Arg('limit', () => Int) limit: number,
     @Arg('cursor', () => String, { nullable: true }) cursor: string | null,
+    @Ctx() { req }: MyContext,
   ): Promise<PaginatedPosts> {
     const realLimit = Math.min(50, limit);
     const realLimitPlusOne = realLimit + 1;
     // const postRepository = IDataSource.getRepository(Post);
 
-    const replacements: any[] = [realLimitPlusOne];
+    const replacements: any[] = [realLimitPlusOne, req.session.userId];
     const time_end = new Date(cursor);
 
     // for using Between 1970-01-01 And time_end, but not include time_end
@@ -123,12 +124,17 @@ export class PostResolver {
         'id', u.id,
         'username', u.username,
         'email', u.email
-        ) creator
+        ) creator,
+       ${
+         req.session.userId
+           ? '(select value from updoot where "userId" = $2 and "postId" = p.id) "voteStatus"'
+           : 'null as "voteStatus"'
+       }
        from post p
        inner join public.user u on u.id = p."creatorId"
        ${
          cursor
-           ? `where p."createdAt" between '1970-01-01T00:00:02.022Z' and $2`
+           ? `where p."createdAt" between '1970-01-01T00:00:02.022Z' and $3`
            : ''
        }
        order by p."createdAt" DESC
