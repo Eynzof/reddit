@@ -43,27 +43,54 @@ export class PostResolver {
     @Ctx() { req }: MyContext,
   ) {
     const isUpdoot = value !== -1;
-    const realvalue = isUpdoot ? 1 : -1;
+    const realvalue: number = isUpdoot ? 1 : -1;
     const { userId } = req.session;
-    // Updoot.insert({
-    //   userId,
-    //   postId,
-    //   value: realvalue,
-    // });
-    IDataSource.query(
-      `
-      START TRANSACTION;
 
-      insert into updoot("userId","postId",value)
-      values(${userId},${postId},${realvalue});
+    const updoot = await Updoot.findOne({ where: { postId, userId } });
 
-      update post
-      set points = points + ${realvalue}
-      where id = ${postId};
+    // the user has voted on the posts before
+    // and are changing their vote
+    if (updoot && updoot.value !== realvalue) {
+      // never voted before
+      await IDataSource.transaction(async (tm) => {
+        await tm.query(
+          `
+        update updoot
+        set value = $1
+        where "postId" = $2 and "userId" = $3
+        `,
+          [realvalue, postId, userId],
+        );
 
-      COMMIT;
-      `,
-    );
+        await tm.query(
+          `
+        update post
+        set points = points + $1
+        where id = $2;
+        `,
+          [2 * realvalue, postId],
+        );
+      });
+    } else if (!updoot) {
+      await IDataSource.transaction(async (tm) => {
+        await tm.query(
+          `
+          insert into updoot ("userId", "postId", value)
+          values($1, $2, $3)
+        `,
+          [userId, postId, value],
+        );
+        await tm.query(
+          `
+        update post
+        set points = points + $1
+        where id = $2;
+        `,
+          [realvalue, postId],
+        );
+      });
+    }
+
     return true;
   }
 
