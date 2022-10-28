@@ -89,6 +89,7 @@ export class PostResolver {
     //   hasMore: posts.length === realLimitPlusOne,
     // };
     // console.log(r);
+    console.log('posts', posts);
     return {
       posts: posts.slice(0, realLimit),
       hasMore: posts.length === realLimitPlusOne,

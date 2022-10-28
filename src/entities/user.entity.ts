@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { ObjectType, Field } from 'type-graphql';
 import { Post } from './post.entity';
+import { Updoot } from './Updoot.entity';
 
 @ObjectType()
 @Entity()
@@ -38,4 +39,7 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Post, (post) => post.creator)
   posts: Post[];
+
+  @OneToMany(() => Updoot, (updoot) => updoot.user)
+  updoots: Updoot[];
 }
