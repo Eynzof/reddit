@@ -3,10 +3,12 @@ import {
   Arg,
   Ctx,
   Field,
+  FieldResolver,
   Mutation,
   ObjectType,
   Query,
   Resolver,
+  Root,
 } from 'type-graphql';
 import argon2 from 'argon2';
 import { MyContext } from 'utils/interfaces/context.interface';
@@ -16,7 +18,7 @@ import { validateRegister } from 'utils/validateRegister';
 import { UsernamePasswordInput } from './UsernamePasswordInput';
 import { sendEmail } from 'utils/sendEmail';
 import { v4 } from 'uuid';
-import { DataSource } from 'index';
+import { IDataSource } from 'index';
 
 @ObjectType()
 class UserResponse {
@@ -34,8 +36,17 @@ class FieldError {
   message: string;
 }
 
-@Resolver()
+@Resolver(User)
 export class UserResolver {
+  @FieldResolver(() => String)
+  email(@Root() user: User, @Ctx() { req }: MyContext) {
+    if (req.session.userId === user.id) {
+      return user.email;
+    }
+
+    return null;
+  }
+
   @Mutation(() => UserResponse)
   async changePassword(
     @Arg('token') token: string,
@@ -158,7 +169,7 @@ export class UserResolver {
     console.log('here');
     let user;
     try {
-      const r = await DataSource.createQueryBuilder()
+      const r = await IDataSource.createQueryBuilder()
         .insert()
         .into(User)
         .values({

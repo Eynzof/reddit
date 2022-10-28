@@ -15,8 +15,9 @@ import { MyContext } from 'utils/interfaces/context.interface';
 
 import { AppDataSource } from 'database/postgres';
 import { createRedisSession } from 'database/redis';
+import { DataSource } from 'typeorm';
 
-export let DataSource;
+export let IDataSource: DataSource;
 
 const main = async () => {
   AppDataSource.initialize()
@@ -26,7 +27,7 @@ const main = async () => {
     })
     .catch((error) => console.log(error));
 
-  DataSource = AppDataSource;
+  IDataSource = AppDataSource;
 
   // sendEmail('bob@bob.com', 'hello');
 

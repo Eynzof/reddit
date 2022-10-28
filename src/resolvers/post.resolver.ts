@@ -1,5 +1,5 @@
 import { Post } from 'entities/post.entity';
-import { DataSource } from 'index';
+import { IDataSource } from 'index';
 import {
   Arg,
   Ctx,
@@ -14,7 +14,6 @@ import {
   Root,
   UseMiddleware,
 } from 'type-graphql';
-import { LessThan } from 'typeorm';
 import { MyContext } from 'utils/interfaces/context.interface';
 import { isAuth } from '../middleware/isAuth';
 @InputType()
@@ -46,33 +45,85 @@ export class PostResolver {
   ): Promise<PaginatedPosts> {
     const realLimit = Math.min(50, limit);
     const realLimitPlusOne = realLimit + 1;
-    const postRepository = DataSource.getRepository(Post);
+    const postRepository = IDataSource.getRepository(Post);
+
+    const replacements: any[] = [realLimitPlusOne];
+    const time_end = new Date(cursor);
+
+    // for using Between 1970-01-01 And time_end, but not include time_end
+    time_end.setMilliseconds(time_end.getMilliseconds() - 1);
+
     if (cursor) {
-      const posts: Post[] = await postRepository.find({
-        where: {
-          createdAt: LessThan(new Date(cursor)),
-        },
-        take: realLimitPlusOne,
-        order: {
-          createdAt: 'DESC',
-        },
-      });
-      return {
-        posts: posts.slice(0, realLimit),
-        hasMore: posts.length === realLimitPlusOne,
-      };
-    } else {
-      const posts: Post[] = await postRepository.find({
-        take: realLimitPlusOne,
-        order: {
-          createdAt: 'DESC',
-        },
-      });
-      return {
-        posts: posts.slice(0, realLimit),
-        hasMore: posts.length === realLimitPlusOne,
-      };
+      replacements.push(time_end);
     }
+
+    const posts = await IDataSource.query(
+      `select p.*,
+       json_build_object(
+        'id', u.id,
+        'username', u.username,
+        'email', u.email
+        ) creator
+       from post p
+       inner join public.user u on u.id = p."creatorId"
+       ${
+         cursor
+           ? `where p."createdAt" between '1970-01-01T00:00:02.022Z' and $2`
+           : ''
+       }
+       order by p."createdAt" DESC
+       limit $1`,
+      replacements,
+    );
+    // .then((posts) => {
+    //   // console.log(r);
+    //   console.log(posts);
+    //   console.log('-----------------------------');
+    //   console.log('realLimit', realLimit);
+    //   const r =
+    //   console.log(r);
+    //   return r;
+    // });
+    // const r = {
+    //   posts: posts.slice(0, realLimit),
+    //   hasMore: posts.length === realLimitPlusOne,
+    // };
+    // console.log(r);
+    return {
+      posts: posts.slice(0, realLimit),
+      hasMore: posts.length === realLimitPlusOne,
+    };
+
+    // if (cursor) {
+    //   const posts: Post[] = await postRepository.find({
+    //     where: {
+    //       createdAt: LessThan(new Date(cursor)),
+    //     },
+    //     take: realLimitPlusOne,
+    //     order: {
+    //       createdAt: 'DESC',
+    //     },
+    //   });
+    //   const r = {
+    //     posts: posts.slice(0, realLimit),
+    //     hasMore: posts.length === realLimitPlusOne,
+    //   };
+    //   console.log(r);
+    //   return r;
+    // } else {
+    //   const posts: Post[] = await postRepository.find({
+    //     take: realLimitPlusOne,
+    //     order: {
+    //       createdAt: 'DESC',
+    //     },
+    //   });
+    //   const r = {
+    //     posts: posts.slice(0, realLimit),
+    //     hasMore: posts.length === realLimitPlusOne,
+    //   };
+    //   console.log(r);
+    //   return r;
+    // }
   }
 
   @Query(() => Post, { nullable: true })
