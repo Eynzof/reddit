@@ -2,7 +2,8 @@ import { Post } from 'entities/post.entity';
 import { Updoot } from 'entities/updoot.entity';
 import { IDataSource } from 'index';
 import {
-  Arg, Ctx,
+  Arg,
+  Ctx,
   Field,
   FieldResolver,
   InputType,
@@ -12,7 +13,7 @@ import {
   Query,
   Resolver,
   Root,
-  UseMiddleware
+  UseMiddleware,
 } from 'type-graphql';
 import { MyContext } from 'utils/interfaces/context.interface';
 import { isAuth } from '../middleware/isAuth';
@@ -44,18 +45,24 @@ export class PostResolver {
     const isUpdoot = value !== -1;
     const realvalue = isUpdoot ? 1 : -1;
     const { userId } = req.session;
-    Updoot.insert({
-      userId,
-      postId,
-      value: realvalue,
-    });
+    // Updoot.insert({
+    //   userId,
+    //   postId,
+    //   value: realvalue,
+    // });
     IDataSource.query(
       `
-      update post p 
-      set points = points + $1 
-      where id = $2   
+      START TRANSACTION;
+
+      insert into updoot("userId","postId",value)
+      values(${userId},${postId},${realvalue});
+
+      update post
+      set points = points + ${realvalue}
+      where id = ${postId};
+
+      COMMIT;
       `,
-      [realvalue, postId],
     );
     return true;
   }
