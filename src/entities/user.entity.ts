@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { ObjectType, Field } from 'type-graphql';
 import { Post } from './post.entity';
-import { Updoot } from './Updoot.entity';
+import { Updoot } from './updoot.entity';
 
 @ObjectType()
 @Entity()

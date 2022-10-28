@@ -4,7 +4,10 @@ import 'reflect-metadata';
 import express from 'express';
 import 'express-async-errors';
 
-import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
+import {
+  ApolloServerPluginLandingPageLocalDefault,
+  ApolloServerPluginLandingPageGraphQLPlayground,
+} from 'apollo-server-core';
 import { ApolloServer } from 'apollo-server-express';
 import cors from 'cors';
 import { HelloResolver } from 'resolvers/hello.resolver';
@@ -19,6 +22,7 @@ import { DataSource } from 'typeorm';
 
 export let IDataSource: DataSource;
 
+// now you can use myDataSource anywhere in your application
 const main = async () => {
   AppDataSource.initialize()
     .then(() => {
@@ -49,7 +53,9 @@ const main = async () => {
       // csrfPrevention: true,
       // cache: 'bounded',
       // 直接在 localhost 嵌入 apollo studio 的内容，形同graphql playgrounds
-      plugins: [ApolloServerPluginLandingPageLocalDefault({ embed: true })],
+      // plugins: [ApolloServerPluginLandingPageLocalDefault({ embed: true })],
+      // plugins: [ApolloServerPluginLandingPageLocalDefault()],
+      plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
       context: ({ req, res }): MyContext => ({
         req,
         res,
@@ -59,15 +65,18 @@ const main = async () => {
 
     await server.start();
     // 这一行允许 ApolloStudio 接管
-    app.use(
-      cors({
-        origin: ['http://localhost:3000', 'https://studio.apollographql.com'],
-        credentials: true,
-      }),
-    );
+    // app.use(
+    //   cors({
+    //     origin: ['http://localhost:3000', 'https://studio.apollographql.com'],
+    //     credentials: true,
+    //   }),
+    // );
     server.applyMiddleware({
       app,
-      cors: false,
+      cors: {
+        origin: ['http://localhost:3000', 'https://studio.apollographql.com'],
+        credentials: true,
+      },
     });
 
     app.listen(4000, () => {

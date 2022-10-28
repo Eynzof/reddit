@@ -4,6 +4,7 @@ import { User } from 'entities/user.entity';
 import { DataSource } from 'typeorm';
 
 import path from 'path';
+import { Updoot } from 'entities/updoot.entity';
 const isProduction = process.env.STATUS === 'production';
 
 export const AppDataSource = new DataSource({
@@ -14,7 +15,7 @@ export const AppDataSource = new DataSource({
   password: 'postgres',
   database: 'reddit',
   migrations: [path.join(__dirname, '../migrations/*')],
-  entities: [Post, User],
+  entities: [Post, User, Updoot],
   synchronize: true,
   logging: true,
 });

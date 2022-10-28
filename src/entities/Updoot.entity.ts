@@ -1,31 +1,29 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-  Column,
-  CreateDateColumn,
-  BaseEntity,
-  ManyToOne,
-} from 'typeorm';
 import { Field, ObjectType } from 'type-graphql';
-import { User } from './user.entity';
+import { BaseEntity, Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm';
 import { Post } from './post.entity';
+import { User } from './user.entity';
 // import { v4 } from 'uuid';
 
 @ObjectType()
 @Entity()
 export class Updoot extends BaseEntity {
+  @Field()
+  @Column({ type: 'int' })
+  value: number;
+
+  @Field(() => Post)
   @ManyToOne(() => Post, (post) => post.updoots)
   post: Post;
 
   @Field()
-  @Column()
+  @PrimaryColumn()
   postId: number;
 
+  @Field(() => User)
   @ManyToOne(() => User, (user) => user.updoots)
   user: User;
 
   @Field()
-  @Column()
+  @PrimaryColumn()
   userId: number;
 }

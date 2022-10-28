@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { Field, ObjectType } from 'type-graphql';
 import { User } from './user.entity';
-import { Updoot } from './Updoot.entity';
+import { Updoot } from './updoot.entity';
 // import { v4 } from 'uuid';
 
 @ObjectType()

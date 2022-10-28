@@ -1,7 +1,9 @@
 import { Post } from 'entities/post.entity';
+import { Updoot } from 'entities/updoot.entity';
 import { IDataSource } from 'index';
 import {
   Arg,
+  Args,
   Ctx,
   Field,
   FieldResolver,
@@ -14,6 +16,7 @@ import {
   Root,
   UseMiddleware,
 } from 'type-graphql';
+import { DataSource } from 'typeorm';
 import { MyContext } from 'utils/interfaces/context.interface';
 import { isAuth } from '../middleware/isAuth';
 @InputType()
@@ -34,6 +37,32 @@ class PaginatedPosts {
 
 @Resolver(Post)
 export class PostResolver {
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
+  async vote(
+    @Arg('postId', () => Int) postId: number,
+    @Arg('value', () => Int) value: number,
+    @Ctx() { req }: MyContext,
+  ) {
+    const isUpdoot = value !== -1;
+    const realvalue = isUpdoot ? 1 : -1;
+    const { userId } = req.session;
+    Updoot.insert({
+      userId,
+      postId,
+      value: realvalue,
+    });
+    IDataSource.query(
+      `
+      update post p 
+      set p.points = p.points + $1 
+      where p.id = $2 
+      `,
+      [realvalue, postId],
+    );
+    return true;
+  }
+
   @FieldResolver(() => String)
   textSnippet(@Root() root: Post) {
     return root.text.slice(0, 50);
