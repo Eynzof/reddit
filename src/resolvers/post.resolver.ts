@@ -1,22 +1,22 @@
-import {
-  Resolver,
-  Query,
-  Arg,
-  Mutation,
-  InputType,
-  Field,
-  Ctx,
-  UseMiddleware,
-  Int,
-  FieldResolver,
-  Root,
-  ObjectType,
-} from 'type-graphql';
-import { isAuth } from '../middleware/isAuth';
 import { Post } from 'entities/post.entity';
-import { MyContext } from 'utils/interfaces/context.interface';
 import { DataSource } from 'index';
-import { LessThan, MoreThan } from 'typeorm';
+import {
+  Arg,
+  Ctx,
+  Field,
+  FieldResolver,
+  InputType,
+  Int,
+  Mutation,
+  ObjectType,
+  Query,
+  Resolver,
+  Root,
+  UseMiddleware,
+} from 'type-graphql';
+import { LessThan } from 'typeorm';
+import { MyContext } from 'utils/interfaces/context.interface';
+import { isAuth } from '../middleware/isAuth';
 @InputType()
 class PostInput {
   @Field()

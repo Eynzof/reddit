@@ -3,4 +3,5 @@
 `ddocker-compose up --build`
 
 ## Version Log
-Zapier ON
+
+> 2022-10-28 00:58 >>> Pagination done
