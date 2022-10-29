@@ -214,22 +214,22 @@ export class PostResolver {
   @Mutation(() => Post, { nullable: true })
   @UseMiddleware(isAuth)
   async updatePost(
-    @Arg('id') id: number,
+    @Arg('id', () => Int) id: number,
     @Arg('title') title: string,
     @Arg('text') text: string,
     @Ctx() { req }: MyContext,
   ): Promise<Post | null> {
-    const post = IDataSource.createQueryBuilder()
+    const post = await IDataSource.createQueryBuilder()
       .update(Post)
       .set({ title, text })
       .where('id=:id and "creatorId" = :creatorId', {
         id,
-        creatorId: req.session.id,
+        creatorId: req.session.userId,
       })
       .returning('*')
       .execute();
     console.log('post', post);
-    return post as any;
+    return post.raw[0];
   }
 
   @Mutation(() => Boolean)
