@@ -104,10 +104,14 @@ export class PostResolver {
   }
 
   @FieldResolver(() => User)
-  creator(@Root() post: Post) {
-    return User.findOneBy({ id: post.creatorId });
+  creator(@Root() post: Post, @Ctx() { userLoader }: MyContext) {
+    return userLoader.load(post.creatorId);
   }
 
+  @FieldResolver(() => Int, { nullable: true })
+  voteStatus(@Root() post: Post, @Ctx() { userLoader }: MyContext) {
+    return 
+  }
   @Query(() => PaginatedPosts)
   async posts(
     @Arg('limit', () => Int) limit: number,

@@ -19,6 +19,7 @@ import { MyContext } from 'utils/interfaces/context.interface';
 import { AppDataSource } from 'database/postgres';
 import { createRedisSession } from 'database/redis';
 import { DataSource } from 'typeorm';
+import { createUserLoader } from 'utils/createUserLoader';
 
 export let IDataSource: DataSource;
 
@@ -60,6 +61,7 @@ const main = async () => {
         req,
         res,
         redis,
+        userLoader: createUserLoader(),
       }),
     });
 

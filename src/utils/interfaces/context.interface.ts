@@ -1,9 +1,10 @@
 import { Request, Response, Express } from 'express';
 import { Redis } from 'ioredis';
+import { createUserLoader } from 'utils/createUserLoader';
 
 export interface MyContext {
   req: Request & { session?: Express.Session };
   res: Response;
-  // em: EntityManager<IDatabaseDriver<Connection>>;
   redis: Redis;
+  userLoader: ReturnType<typeof createUserLoader>;
 }
