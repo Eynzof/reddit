@@ -9,7 +9,7 @@ COPY package.json ./
 COPY yarn.lock ./
 
 # COPY ENV variable
-COPY .env ./
+COPY .env.production .env
 
 # COPY tsconfig.json file
 COPY tsconfig.json ./

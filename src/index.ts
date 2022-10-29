@@ -82,12 +82,12 @@ const main = async () => {
     server.applyMiddleware({
       app,
       cors: {
-        origin: ['http://localhost:3000', 'https://studio.apollographql.com'],
+        origin: process.env.CORS_ORIGIN,
         credentials: true,
       },
     });
 
-    app.listen(4000, () => {
+    app.listen(parseInt(process.env.PORT), () => {
       console.log(`server listening on port 4000`);
     });
   } catch (error) {

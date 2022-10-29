@@ -3,12 +3,7 @@ import connectRedis from 'connect-redis';
 import Redis from 'ioredis';
 import { COOKIE_NAME, __prod__ } from '../constants';
 
-// const isProduction = process.env.STATUS === 'production';
-const isProduction = process.env.NODE_ENV === 'production';
-
-const url = isProduction
-  ? process.env.REDIS_URL_PROD
-  : process.env.REDIS_URL_DEV;
+const url = __prod__ ? process.env.REDIS_URL : process.env.REDIS_URL_DEV;
 export const createRedisSession = () => {
   const RedisStore = connectRedis(session);
   const redis = new Redis(url);
@@ -22,13 +17,14 @@ export const createRedisSession = () => {
       cookie: {
         // keep this false, or the cookie won't be saved to local browser,
         // which caused the view counter not working properly
-        secure: false, // if true: only transmit cookie over https, in prod, always activate this
+        secure: __prod__, // if true: only transmit cookie over https, in prod, always activate this
         httpOnly: true, // if true: prevents client side JS from reading the cookie
         maxAge: 1000 * 60 * 30, // session max age in milliseconds
         // explicitly set cookie to lax
         // to make sure that all cookies accept it
         // you should never use none anyway
         sameSite: 'lax',
+        // domain: __prod__ ? '.masoniclab.com' : undefined,
       },
       secret: process.env.REDIS_SECRET,
       resave: false,

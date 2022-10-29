@@ -5,15 +5,14 @@ import { DataSource } from 'typeorm';
 
 import path from 'path';
 import { Updoot } from 'entities/updoot.entity';
-// const isProduction = process.env.STATUS === 'production';
-const isProduction = process.env.NODE_ENV === 'production';
+import { __prod__ } from '../constants';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
-  host: isProduction
+  host: __prod__
     ? process.env.POSTGRES_HOST_PROD
     : process.env.POSTGRES_HOST_DEV,
-  port: Number(process.env.POSTGRES_PORT),
+  port: parseInt(process.env.POSTGRES_PORT),
   username: process.env.POSTGRES_USERNAME,
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DATABASE,
