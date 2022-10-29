@@ -1,6 +1,14 @@
 
+## 如何启动?
 
-`ddocker-compose up --build`
+
+#### docker 环境下启动
+`.env`文件中的status设为`production`
+
+
+`docker-compose up --build`
+
+
 
 ## Version Log
 

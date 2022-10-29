@@ -5,8 +5,8 @@ import { COOKIE_NAME, __prod__ } from '../constants';
 
 const isProduction = process.env.STATUS === 'production';
 const url = isProduction
-  ? 'redis://default@host.docker.internal:6379/'
-  : 'redis://default:redispw@localhost:6379/';
+  ? process.env.REDIS_URL_PROD
+  : process.env.REDIS_URL_DEV;
 export const createRedisSession = () => {
   const RedisStore = connectRedis(session);
   const redis = new Redis(url);
@@ -28,7 +28,7 @@ export const createRedisSession = () => {
         // you should never use none anyway
         sameSite: 'lax',
       },
-      secret: 'masoniclab',
+      secret: process.env.REDIS_SECRET,
       resave: false,
       saveUninitialized: false,
     }),
