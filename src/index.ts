@@ -26,6 +26,10 @@ export let IDataSource: DataSource;
 
 // now you can use myDataSource anywhere in your application
 const main = async () => {
+  console.log('--------------------');
+  console.log('process.env.NODE_ENV', process.env.NODE_ENV);
+  console.log(process.env.NODE_ENV === 'production');
+
   AppDataSource.initialize()
     .then(() => {
       // here you can start to work with your database

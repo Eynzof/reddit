@@ -3,7 +3,9 @@ import connectRedis from 'connect-redis';
 import Redis from 'ioredis';
 import { COOKIE_NAME, __prod__ } from '../constants';
 
-const isProduction = process.env.STATUS === 'production';
+// const isProduction = process.env.STATUS === 'production';
+const isProduction = process.env.NODE_ENV === 'production';
+
 const url = isProduction
   ? process.env.REDIS_URL_PROD
   : process.env.REDIS_URL_DEV;

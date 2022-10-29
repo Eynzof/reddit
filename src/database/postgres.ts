@@ -5,7 +5,8 @@ import { DataSource } from 'typeorm';
 
 import path from 'path';
 import { Updoot } from 'entities/updoot.entity';
-const isProduction = process.env.STATUS === 'production';
+// const isProduction = process.env.STATUS === 'production';
+const isProduction = process.env.NODE_ENV === 'production';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',

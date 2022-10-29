@@ -1,11 +1,12 @@
-FROM node:16
+FROM node:16-slim
 RUN apt-get update
 RUN apt-get install -y openssl
 
 WORKDIR /app
 
-# COPY package.json and package-lock.json files
-COPY package*.json ./
+# COPY package.json and yarn-lock.json files
+COPY package.json ./
+COPY yarn.lock ./
 
 # COPY ENV variable
 COPY .env ./
@@ -16,7 +17,13 @@ COPY tsconfig.json ./
 # COPY
 COPY . .
 
-RUN npm install
+ENV NODE_ENV production
+
+RUN yarn
+RUN yarn build
+
 EXPOSE 4000 
 
-CMD npm run start
+CMD yarn start
+
+USER node
