@@ -12,7 +12,9 @@ export class Updoot extends BaseEntity {
   value: number;
 
   @Field(() => Post)
-  @ManyToOne(() => Post, (post) => post.updoots)
+  @ManyToOne(() => Post, (post) => post.updoots, {
+    onDelete: 'CASCADE',
+  })
   post: Post;
 
   @Field()

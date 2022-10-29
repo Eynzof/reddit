@@ -1,3 +1,4 @@
+import { text } from 'body-parser';
 import { Post } from 'entities/post.entity';
 import { Updoot } from 'entities/updoot.entity';
 import { IDataSource } from 'index';
@@ -108,25 +109,13 @@ export class PostResolver {
   ): Promise<PaginatedPosts> {
     const realLimit = Math.min(50, limit);
     const realLimitPlusOne = realLimit + 1;
-    // const postRepository = IDataSource.getRepository(Post);
 
-    const replacements: any[] = [realLimitPlusOne];
-
-    if (req.session.userId) {
-      replacements.push(req.session.userId);
-    }
-
-    const time_end = new Date(cursor);
+    const time_end: Date = new Date(cursor);
 
     // for using Between 1970-01-01 And time_end, but not include time_end
     time_end.setMilliseconds(time_end.getMilliseconds() - 1);
 
-    let cursorIndex = 3;
-
-    if (cursor) {
-      cursorIndex = replacements.length;
-      replacements.push(time_end);
-    }
+    const t: string = time_end.toISOString();
 
     const posts = await IDataSource.query(
       `select p.*,
@@ -137,19 +126,18 @@ export class PostResolver {
         ) creator,
        ${
          req.session.userId
-           ? '(select value from updoot where "userId" = $2 and "postId" = p.id) "voteStatus"'
+           ? `(select value from updoot where "userId" = ${req.session.userId} and "postId" = p.id) "voteStatus"`
            : 'null as "voteStatus"'
        }
        from post p
        inner join public.user u on u.id = p."creatorId"
        ${
          cursor
-           ? `where p."createdAt" between '1970-01-01T00:00:02.022Z' and $${cursorIndex}`
+           ? `where p."createdAt" between '1970-01-01T00:00:02.022Z' and '${t}'`
            : ''
        }
        order by p."createdAt" DESC
-       limit $1`,
-      replacements,
+       limit ${realLimitPlusOne}`,
     );
     // .then((posts) => {
     //   // console.log(r);
@@ -165,7 +153,6 @@ export class PostResolver {
     //   hasMore: posts.length === realLimitPlusOne,
     // };
     // console.log(r);
-    console.log('posts', posts);
     return {
       posts: posts.slice(0, realLimit),
       hasMore: posts.length === realLimitPlusOne,
@@ -225,23 +212,49 @@ export class PostResolver {
   }
 
   @Mutation(() => Post, { nullable: true })
+  @UseMiddleware(isAuth)
   async updatePost(
     @Arg('id') id: number,
-    @Arg('title', () => String, { nullable: true }) title: string,
+    @Arg('title') title: string,
+    @Arg('text') text: string,
+    @Ctx() { req }: MyContext,
   ): Promise<Post | null> {
-    const post = await Post.findOneBy({ id: id });
-    if (!post) {
-      return null;
-    }
-    if (typeof title !== 'undefined') {
-      await Post.update({ id }, { title });
-    }
-    return post;
+    const post = IDataSource.createQueryBuilder()
+      .update(Post)
+      .set({ title, text })
+      .where('id=:id and "creatorId" = :creatorId', {
+        id,
+        creatorId: req.session.id,
+      })
+      .returning('*')
+      .execute();
+    console.log('post', post);
+    return post as any;
   }
 
   @Mutation(() => Boolean)
-  async deletePost(@Arg('id') id: number): Promise<boolean> {
-    await Post.delete(id);
+  @UseMiddleware(isAuth)
+  async deletePost(
+    @Arg('id', () => Int) id: number,
+    @Ctx() { req }: MyContext,
+  ): Promise<boolean> {
+    // not casacde way
+    // // if a post has vote on it, need extra process
+    // const currentUserId = req.session.userId;
+
+    // const post = await Post.findOneBy({ id });
+    // if (!post) {
+    //   return false;
+    // }
+    // if (post.creatorId !== currentUserId) {
+    //   throw new Error('not authorized');
+    // }
+    // // delete updoot
+    // await Updoot.delete({ postId: id });
+    // // only the author can delete his post
+    // await Post.delete({ id, creatorId: currentUserId });
+
+    await Post.delete({ id, creatorId: req.session.userId });
     return true;
   }
 }
