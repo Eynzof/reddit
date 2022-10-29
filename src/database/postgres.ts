@@ -18,6 +18,6 @@ export const AppDataSource = new DataSource({
   database: process.env.POSTGRES_DATABASE,
   migrations: [path.join(__dirname, '../migrations/*')],
   entities: [Post, User, Updoot],
-  synchronize: true,
+  // synchronize: true,
   logging: true,
 });

@@ -24,6 +24,8 @@ export const createRedisSession = () => {
         // to make sure that all cookies accept it
         // you should never use none anyway
         sameSite: 'lax',
+
+        // TODO: check this
         // domain: __prod__ ? '.masoniclab.com' : undefined,
       },
       secret: process.env.REDIS_SECRET,

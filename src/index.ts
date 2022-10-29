@@ -47,6 +47,9 @@ const main = async () => {
   const { session, redis } = createRedisSession();
   app.use(session);
 
+  // for nginx proxy
+  app.set('proxy', 1);
+
   try {
     const { typeDefs, resolvers } = await buildTypeDefsAndResolvers({
       resolvers: [HelloResolver, PostResolver, UserResolver],
@@ -79,6 +82,7 @@ const main = async () => {
     //     credentials: true,
     //   }),
     // );
+
     server.applyMiddleware({
       app,
       cors: {
