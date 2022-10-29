@@ -44,6 +44,8 @@ export class PostResolver {
   ) {
     const isUpdoot = value !== -1;
     const realvalue: number = isUpdoot ? 1 : -1;
+
+    // current user
     const { userId } = req.session;
 
     const updoot = await Updoot.findOne({ where: { postId, userId } });
@@ -108,13 +110,21 @@ export class PostResolver {
     const realLimitPlusOne = realLimit + 1;
     // const postRepository = IDataSource.getRepository(Post);
 
-    const replacements: any[] = [realLimitPlusOne, req.session.userId];
+    const replacements: any[] = [realLimitPlusOne];
+
+    if (req.session.userId) {
+      replacements.push(req.session.userId);
+    }
+
     const time_end = new Date(cursor);
 
     // for using Between 1970-01-01 And time_end, but not include time_end
     time_end.setMilliseconds(time_end.getMilliseconds() - 1);
 
+    let cursorIndex = 3;
+
     if (cursor) {
+      cursorIndex = replacements.length;
       replacements.push(time_end);
     }
 
@@ -134,7 +144,7 @@ export class PostResolver {
        inner join public.user u on u.id = p."creatorId"
        ${
          cursor
-           ? `where p."createdAt" between '1970-01-01T00:00:02.022Z' and $3`
+           ? `where p."createdAt" between '1970-01-01T00:00:02.022Z' and $${cursorIndex}`
            : ''
        }
        order by p."createdAt" DESC
