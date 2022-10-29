@@ -109,9 +109,21 @@ export class PostResolver {
   }
 
   @FieldResolver(() => Int, { nullable: true })
-  voteStatus(@Root() post: Post, @Ctx() { userLoader }: MyContext) {
-    return 
+  async voteStatus(
+    @Root() post: Post,
+    @Ctx() { updootLoader, req }: MyContext,
+  ) {
+    // not logged in, no votestatus
+    if (!req.session.userId) {
+      return null;
+    }
+    const updoot = await updootLoader.load({
+      postId: post.id,
+      userId: req.session.userId,
+    });
+    return updoot ? updoot.value : null;
   }
+
   @Query(() => PaginatedPosts)
   async posts(
     @Arg('limit', () => Int) limit: number,
@@ -129,12 +141,7 @@ export class PostResolver {
     const t: string = time_end.toISOString();
 
     const posts = await IDataSource.query(
-      `select p.*,
-       ${
-         req.session.userId
-           ? `(select value from updoot where "userId" = ${req.session.userId} and "postId" = p.id) "voteStatus"`
-           : 'null as "voteStatus"'
-       }
+      `select p.*
        from post p
        ${
          cursor
