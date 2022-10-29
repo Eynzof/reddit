@@ -1,6 +1,7 @@
 import { text } from 'body-parser';
 import { Post } from 'entities/post.entity';
 import { Updoot } from 'entities/updoot.entity';
+import { User } from 'entities/user.entity';
 import { IDataSource } from 'index';
 import {
   Arg,
@@ -101,6 +102,12 @@ export class PostResolver {
   textSnippet(@Root() root: Post) {
     return root.text.slice(0, 50);
   }
+
+  @FieldResolver(() => User)
+  creator(@Root() post: Post) {
+    return User.findOneBy({ id: post.creatorId });
+  }
+
   @Query(() => PaginatedPosts)
   async posts(
     @Arg('limit', () => Int) limit: number,
@@ -119,18 +126,12 @@ export class PostResolver {
 
     const posts = await IDataSource.query(
       `select p.*,
-       json_build_object(
-        'id', u.id,
-        'username', u.username,
-        'email', u.email
-        ) creator,
        ${
          req.session.userId
            ? `(select value from updoot where "userId" = ${req.session.userId} and "postId" = p.id) "voteStatus"`
            : 'null as "voteStatus"'
        }
        from post p
-       inner join public.user u on u.id = p."creatorId"
        ${
          cursor
            ? `where p."createdAt" between '1970-01-01T00:00:02.022Z' and '${t}'`
@@ -192,10 +193,7 @@ export class PostResolver {
 
   @Query(() => Post, { nullable: true })
   async post(@Arg('id', () => Int) id: number): Promise<Post | undefined> {
-    const r = await IDataSource.getRepository(Post).findOne({
-      relations: ['creator'],
-      where: { id },
-    });
+    const r = await IDataSource.getRepository(Post).findOneBy({ id });
     return r;
   }
 
