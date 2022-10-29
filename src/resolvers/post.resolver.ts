@@ -204,8 +204,12 @@ export class PostResolver {
   }
 
   @Query(() => Post, { nullable: true })
-  post(@Arg('id') id: number): Promise<Post | undefined> {
-    return Post.findOneBy({ id: id });
+  async post(@Arg('id', () => Int) id: number): Promise<Post | undefined> {
+    const r = await IDataSource.getRepository(Post).findOne({
+      relations: ['creator'],
+      where: { id },
+    });
+    return r;
   }
 
   @Mutation(() => Post)
