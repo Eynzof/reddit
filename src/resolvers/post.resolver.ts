@@ -1,58 +1,269 @@
+import { text } from 'body-parser';
 import { Post } from 'entities/post.entity';
-import { Arg, Ctx, Mutation, Query, Resolver } from 'type-graphql';
+import { Updoot } from 'entities/updoot.entity';
+import { User } from 'entities/user.entity';
+import { IDataSource } from 'index';
+import {
+  Arg,
+  Ctx,
+  Field,
+  FieldResolver,
+  InputType,
+  Int,
+  Mutation,
+  ObjectType,
+  Query,
+  Resolver,
+  Root,
+  UseMiddleware,
+} from 'type-graphql';
 import { MyContext } from 'utils/interfaces/context.interface';
+import { isAuth } from '../middleware/isAuth';
+@InputType()
+class PostInput {
+  @Field()
+  title: string;
+  @Field()
+  text: string;
+}
 
-@Resolver()
+@ObjectType()
+class PaginatedPosts {
+  @Field(() => [Post])
+  posts: Post[];
+  @Field()
+  hasMore: boolean;
+}
+
+@Resolver(Post)
 export class PostResolver {
-  @Query(() => [Post])
-  public async posts(@Ctx() { em }: MyContext): Promise<Post[]> {
-    return em.find(Post, {});
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
+  async vote(
+    @Arg('postId', () => Int) postId: number,
+    @Arg('value', () => Int) value: number,
+    @Ctx() { req }: MyContext,
+  ) {
+    const isUpdoot = value !== -1;
+    const realvalue: number = isUpdoot ? 1 : -1;
+
+    // current user
+    const { userId } = req.session;
+
+    const updoot = await Updoot.findOne({ where: { postId, userId } });
+
+    // the user has voted on the posts before
+    // and are changing their vote
+    if (updoot && updoot.value !== realvalue) {
+      // never voted before
+      await IDataSource.transaction(async (tm) => {
+        await tm.query(
+          `
+        update updoot
+        set value = $1
+        where "postId" = $2 and "userId" = $3
+        `,
+          [realvalue, postId, userId],
+        );
+
+        await tm.query(
+          `
+        update post
+        set points = points + $1
+        where id = $2;
+        `,
+          [2 * realvalue, postId],
+        );
+      });
+    } else if (!updoot) {
+      await IDataSource.transaction(async (tm) => {
+        await tm.query(
+          `
+          insert into updoot ("userId", "postId", value)
+          values($1, $2, $3)
+        `,
+          [userId, postId, value],
+        );
+        await tm.query(
+          `
+        update post
+        set points = points + $1
+        where id = $2;
+        `,
+          [realvalue, postId],
+        );
+      });
+    }
+
+    return true;
   }
+
+  @FieldResolver(() => String)
+  textSnippet(@Root() root: Post) {
+    return root.text.slice(0, 50);
+  }
+
+  @FieldResolver(() => User)
+  creator(@Root() post: Post, @Ctx() { userLoader }: MyContext) {
+    return userLoader.load(post.creatorId);
+  }
+
+  @FieldResolver(() => Int, { nullable: true })
+  async voteStatus(
+    @Root() post: Post,
+    @Ctx() { updootLoader, req }: MyContext,
+  ) {
+    // not logged in, no votestatus
+    if (!req.session.userId) {
+      return null;
+    }
+    const updoot = await updootLoader.load({
+      postId: post.id,
+      userId: req.session.userId,
+    });
+    return updoot ? updoot.value : null;
+  }
+
+  @Query(() => PaginatedPosts)
+  async posts(
+    @Arg('limit', () => Int) limit: number,
+    @Arg('cursor', () => String, { nullable: true }) cursor: string | null,
+    @Ctx() { req }: MyContext,
+  ): Promise<PaginatedPosts> {
+    const realLimit = Math.min(50, limit);
+    const realLimitPlusOne = realLimit + 1;
+
+    const time_end: Date = new Date(cursor);
+
+    // for using Between 1970-01-01 And time_end, but not include time_end
+    time_end.setMilliseconds(time_end.getMilliseconds() - 1);
+
+    const t: string = time_end.toISOString();
+
+    const posts = await IDataSource.query(
+      `select p.*
+       from post p
+       ${
+         cursor
+           ? `where p."createdAt" between '1970-01-01T00:00:02.022Z' and '${t}'`
+           : ''
+       }
+       order by p."createdAt" DESC
+       limit ${realLimitPlusOne}`,
+    );
+    // .then((posts) => {
+    //   // console.log(r);
+    //   console.log(posts);
+    //   console.log('-----------------------------');
+    //   console.log('realLimit', realLimit);
+    //   const r =
+    //   console.log(r);
+    //   return r;
+    // });
+    // const r = {
+    //   posts: posts.slice(0, realLimit),
+    //   hasMore: posts.length === realLimitPlusOne,
+    // };
+    // console.log(r);
+    return {
+      posts: posts.slice(0, realLimit),
+      hasMore: posts.length === realLimitPlusOne,
+    };
+
+    // if (cursor) {
+    //   const posts: Post[] = await postRepository.find({
+    //     where: {
+    //       createdAt: LessThan(new Date(cursor)),
+    //     },
+    //     take: realLimitPlusOne,
+    //     order: {
+    //       createdAt: 'DESC',
+    //     },
+    //   });
+    //   const r = {
+    //     posts: posts.slice(0, realLimit),
+    //     hasMore: posts.length === realLimitPlusOne,
+    //   };
+    //   console.log(r);
+    //   return r;
+    // } else {
+    //   const posts: Post[] = await postRepository.find({
+    //     take: realLimitPlusOne,
+    //     order: {
+    //       createdAt: 'DESC',
+    //     },
+    //   });
+    //   const r = {
+    //     posts: posts.slice(0, realLimit),
+    //     hasMore: posts.length === realLimitPlusOne,
+    //   };
+    //   console.log(r);
+    //   return r;
+    // }
+  }
+
   @Query(() => Post, { nullable: true })
-  public async post(
-    @Arg('id') id: number,
-    @Ctx() { em }: MyContext,
-  ): Promise<Post | null> {
-    return em.findOne(Post, { id });
+  async post(@Arg('id', () => Int) id: number): Promise<Post | undefined> {
+    const r = await IDataSource.getRepository(Post).findOneBy({ id });
+    return r;
   }
 
   @Mutation(() => Post)
-  public async createPost(
-    @Arg('title') title: string,
-    @Ctx() { em }: MyContext,
+  @UseMiddleware(isAuth)
+  async createPost(
+    @Arg('input') input: PostInput,
+    @Ctx() { req }: MyContext,
   ): Promise<Post> {
-    const post = em.create(Post, { title });
-    await em.persistAndFlush(post);
-    return post;
+    return Post.create({
+      ...input,
+      creatorId: req.session.userId,
+    }).save();
   }
 
   @Mutation(() => Post, { nullable: true })
-  public async updatePost(
-    @Arg('id') id: number,
-    @Arg('title', { nullable: true }) title: string,
-    @Ctx() { em }: MyContext,
+  @UseMiddleware(isAuth)
+  async updatePost(
+    @Arg('id', () => Int) id: number,
+    @Arg('title') title: string,
+    @Arg('text') text: string,
+    @Ctx() { req }: MyContext,
   ): Promise<Post | null> {
-    const post = await em.findOne(Post, { id });
-    if (!post) {
-      return null;
-    }
-    if (typeof post !== undefined) {
-      post.title = title;
-      await em.persistAndFlush(post);
-    }
-    return post;
+    const post = await IDataSource.createQueryBuilder()
+      .update(Post)
+      .set({ title, text })
+      .where('id=:id and "creatorId" = :creatorId', {
+        id,
+        creatorId: req.session.userId,
+      })
+      .returning('*')
+      .execute();
+    console.log('post', post);
+    return post.raw[0];
   }
 
   @Mutation(() => Boolean)
-  public async deletePost(
-    @Arg('id') id: number,
-    @Ctx() { em }: MyContext,
+  @UseMiddleware(isAuth)
+  async deletePost(
+    @Arg('id', () => Int) id: number,
+    @Ctx() { req }: MyContext,
   ): Promise<boolean> {
-    try {
-      await em.nativeDelete(Post, { id });
-    } catch (err) {
-      return false;
-    }
+    // not casacde way
+    // // if a post has vote on it, need extra process
+    // const currentUserId = req.session.userId;
+
+    // const post = await Post.findOneBy({ id });
+    // if (!post) {
+    //   return false;
+    // }
+    // if (post.creatorId !== currentUserId) {
+    //   throw new Error('not authorized');
+    // }
+    // // delete updoot
+    // await Updoot.delete({ postId: id });
+    // // only the author can delete his post
+    // await Post.delete({ id, creatorId: currentUserId });
+
+    await Post.delete({ id, creatorId: req.session.userId });
     return true;
   }
 }

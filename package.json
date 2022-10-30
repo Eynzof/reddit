@@ -1,36 +1,35 @@
 {
-  "name": "mikro-orm-graphql-example",
-  "description": "A MikroORM boilerplate for GraphQL made with Typescript using TypeGraphQL",
+  "name": "reddit",
+  "description": "reddit",
   "version": "1.0.0",
   "license": "MIT",
-  "author": "Dries Croons",
+  "author": "Enzo Li",
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "cross-env NODE_DEV=true ts-node-dev -r tsconfig-paths/register src/index.ts",
-    "gen-env-types": "gen-env-types .env -o src/utils/types/env.d.ts -e .",
-    "start": "yarn build && cross-env NODE_PATH=./dist/src DEBUG=express-session node dist/src/index.js",
-    "node-d": "cross-env NODE_PATH=./dist/src node-dev dist/src/index.js",
+    "dev": "cross-env ts-node-dev -r tsconfig-paths/register src/index.ts",
+    "gen-env": "gen-env-types .env -o src/utils/types/env.d.ts -e .",
+    "start": "cross-env NODE_PATH=./dist DEBUG=express-session node dist/index.js",
     "lint": "eslint src/**/*.ts --fix",
-    "test": "cross-env NODE_DEV=true NODE_ENV=test ts-mocha ./tests/**/*.test.ts --package package.json",
+    "pret": "prettier --config .prettierrc 'src/**/*.ts' --write",
+    "test": "cross-env NODE_ENV=test ts-mocha ./tests/**/*.test.ts --package package.json",
     "loadFixtures": "yarn test --grep \"should clear database and load fixtures\"",
-    "create:migration": "mikro-orm migration:create"
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli -d ormconfig.ts",
+    "migration:create": "cross-var ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli migration:create ./src/migrations/$npm_config_name",
+    "migration:generate": "cross-var npm run typeorm -- migration:generate ./src/migrations/$npm_config_name",
+    "migration:run": "npm run build && npm run typeorm -- migration:run",
+    "migration:revert": "npm run typeorm -- migration:revert"
   },
   "dependencies": {
-    "@mikro-orm/cli": "^5.4.2",
-    "@mikro-orm/core": "^5.4.2",
-    "@mikro-orm/migrations": "^5.4.2",
-    "@mikro-orm/postgresql": "^5.4.2",
-    "@mikro-orm/reflection": "^5.4.2",
-    "@mikro-orm/sql-highlighter": "^1.0.1",
     "@types/chai": "^4.2.12",
     "@types/cors": "^2.8.6",
     "@types/express": "^4.17.14",
     "@types/express-session": "1.17.0",
     "@types/mocha": "^8.0.1",
+    "@types/node": "^18.11.5",
     "@types/redis": "^4.0.11",
     "@types/supertest": "^2.0.10",
-    "@types/uuid": "^8.0.0",
+    "@types/uuid": "^8.3.4",
     "@typescript-eslint/eslint-plugin": "^3.8.0",
     "@typescript-eslint/parser": "^3.8.0",
     "@urql/exchange-graphcache": "^5.0.1",
@@ -39,11 +38,14 @@
     "argon2": "^0.29.1",
     "body-parser": "^1.19.0",
     "chai": "^4.2.0",
-    "class-validator": "^0.12.2",
+    "class-validator": "^0.13.2",
     "connect-redis": "^6.1.3",
     "cors": "^2.8.5",
     "cross-env": "^7.0.2",
+    "cross-var": "^1.1.0",
+    "dataloader": "^2.1.0",
     "dotenv": "^8.2.0",
+    "dotenv-safe": "^8.2.0",
     "eslint": "^7.6.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.4",
@@ -57,11 +59,19 @@
     "graphql-fields-to-relations": "^1.0.4",
     "graphql-playground-middleware-express": "^1.7.18",
     "husky": "^4.2.5",
+    "ioredis": "^5.2.3",
     "mocha": "^7.2.0",
+    "next-urql": "^4.0.0",
     "node-dev": "^7.4.3",
+    "nodemailer": "^6.8.0",
     "parseurl": "^1.3.3",
     "pg": "^8.3.0",
+    "postgres-date": "^2.1.0",
     "prettier": "^2.0.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-is": "^18.2.0",
+    "react-ssr-prepass": "^1.5.0",
     "redis": "^4.3.1",
     "reflect-metadata": "^0.1.13",
     "supertest": "^4.0.2",
@@ -69,8 +79,11 @@
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^3.9.0",
     "type-graphql": "^1.1.1",
+    "typeorm": "^0.3.10",
     "typescript": "^4.8.4",
-    "uuid": "^8.2.0"
+    "urql": "^3.0.3",
+    "uuid": "^9.0.0",
+    "wonka": "^6.1.0"
   },
   "husky": {
     "hooks": {
@@ -90,16 +103,12 @@
     "forbidPending": true,
     "color": true
   },
-  "mikro-orm": {
-    "useTsNode": true,
-    "configPaths": [
-      "./src/orm.config.ts"
-    ]
-  },
   "engines": {
     "node": ">=14.0.0"
   },
   "devDependencies": {
+    "@types/ioredis": "^4.28.10",
+    "@types/nodemailer": "^6.4.6",
     "ts-node": "^10.9.1"
   }
 }

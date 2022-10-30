@@ -4,89 +4,52 @@ import 'reflect-metadata';
 import express from 'express';
 import 'express-async-errors';
 
-import { MikroORM } from '@mikro-orm/core';
-import { PublisherType } from 'contracts/enums/publisherType.enum';
-import cors from 'cors';
-import ormConfig from 'orm.config';
-import { buildTypeDefsAndResolvers, registerEnumType } from 'type-graphql';
-import { MyContext } from 'utils/interfaces/context.interface';
-import { HelloResolver } from 'resolvers/hello.resolver';
+import {
+  ApolloServerPluginLandingPageLocalDefault,
+  ApolloServerPluginLandingPageGraphQLPlayground,
+} from 'apollo-server-core';
 import { ApolloServer } from 'apollo-server-express';
-
-import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
+import cors from 'cors';
+import { HelloResolver } from 'resolvers/hello.resolver';
 import { PostResolver } from 'resolvers/post.resolver';
 import { UserResolver } from 'resolvers/user.resolver';
+import { buildTypeDefsAndResolvers } from 'type-graphql';
+import { MyContext } from 'utils/interfaces/context.interface';
 
-import session from 'express-session';
-import connectRedis from 'connect-redis';
+import { AppDataSource } from 'database/postgres';
+import { createRedisSession, REDIS_URL } from 'database/redis';
+import { DataSource } from 'typeorm';
+import { createUserLoader } from 'utils/createUserLoader';
+import { createUpdootLoader } from 'utils/createUpdootLoader';
 
-import * as redis from 'redis';
-import { COOKIE_NAME, __prod__ } from './constants';
+export let IDataSource: DataSource;
 
-// TODO: create service for this
-registerEnumType(PublisherType, {
-  name: 'PublisherType',
-  description: 'Type of the publisher',
-});
-
+// now you can use myDataSource anywhere in your application
 const main = async () => {
-  let orm = null;
-  try {
-    orm = await MikroORM.init(ormConfig);
-    const migrator = orm.getMigrator();
-    const migrations = await migrator.getPendingMigrations();
-    if (migrations && migrations.length > 0) {
-      await migrator.up();
-    }
-  } catch (error) {
-    console.error('📌 Could not connect to the database', error);
-    throw Error(error);
-  }
+  console.log('--------------------');
+  console.log('process.env.NODE_ENV', process.env.NODE_ENV);
+  console.log('REDIS_URL', REDIS_URL);
+  // console.log(process.env.NODE_ENV === 'production');
+
+  AppDataSource.initialize()
+    .then(() => {
+      // here you can start to work with your database
+      AppDataSource.runMigrations();
+    })
+    .catch((error) => console.log(error));
+
+  IDataSource = AppDataSource;
+
+  // sendEmail('bob@bob.com', 'hello');
 
   const app = express();
-  // 这一行允许 ApolloStudio 接管
-  app.use(
-    cors({
-      origin: 'http://localhost:3000',
-      credentials: true,
-    }),
-  );
-  // 构造 Redis 客户端
-  // 相当于 let RedisStore = require("connect-redis")(session)
-  const RedisStore = connectRedis(session);
-  const redisClient = redis.createClient({
-    legacyMode: true,
-    url: 'redis://default:redispw@localhost:55000',
-  });
 
-  // [node.js - Redis NodeJs server error,client is closed - Stack Overflow](https://stackoverflow.com/questions/70185436/redis-nodejs-server-error-client-is-closed)
-  await redisClient.connect();
+  // setup redis connection
+  const { session, redis } = createRedisSession();
+  app.use(session);
 
-  // app.set('trust proxy', true);
-
-  app.use(
-    session({
-      name: COOKIE_NAME,
-      store: new RedisStore({
-        client: redisClient,
-        disableTouch: true,
-      }),
-      cookie: {
-        // keep this false, or the cookie won't be saved to local browser,
-        // which caused the view counter not working properly
-        secure: false, // if true: only transmit cookie over https, in prod, always activate this
-        httpOnly: true, // if true: prevents client side JS from reading the cookie
-        maxAge: 1000 * 60 * 30, // session max age in milliseconds
-        // explicitly set cookie to lax
-        // to make sure that all cookies accept it
-        // you should never use none anyway
-        sameSite: 'lax',
-      },
-      secret: 'masoniclab',
-      resave: false,
-      saveUninitialized: false,
-    }),
-  );
+  // for nginx proxy
+  app.set('proxy', 1);
 
   try {
     const { typeDefs, resolvers } = await buildTypeDefsAndResolvers({
@@ -99,22 +62,37 @@ const main = async () => {
       resolvers,
       // csrfPrevention: true,
       // cache: 'bounded',
+      // 直接在 localhost 嵌入 apollo studio 的内容，形同graphql playgrounds
+      // plugins: [ApolloServerPluginLandingPageLocalDefault({ embed: true })],
+      // plugins: [ApolloServerPluginLandingPageLocalDefault()],
       plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
       context: ({ req, res }): MyContext => ({
-        em: orm.em,
         req,
         res,
+        redis,
+        userLoader: createUserLoader(),
+        updootLoader: createUpdootLoader(),
       }),
     });
 
     await server.start();
+    // 这一行允许 ApolloStudio 接管
+    // app.use(
+    //   cors({
+    //     origin: ['http://localhost:3000', 'https://studio.apollographql.com'],
+    //     credentials: true,
+    //   }),
+    // );
 
     server.applyMiddleware({
       app,
-      cors: false,
+      cors: {
+        origin: process.env.CORS_ORIGIN,
+        credentials: true,
+      },
     });
 
-    app.listen(4000, () => {
+    app.listen(parseInt(process.env.PORT), () => {
       console.log(`server listening on port 4000`);
     });
   } catch (error) {

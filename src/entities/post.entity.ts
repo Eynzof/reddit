@@ -1,23 +1,56 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
-import { Field, ObjectType } from 'type-graphql';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  Column,
+  CreateDateColumn,
+  BaseEntity,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
+import { Field, Int, ObjectType } from 'type-graphql';
+import { User } from './user.entity';
+import { Updoot } from './updoot.entity';
 // import { v4 } from 'uuid';
 
 @ObjectType()
 @Entity()
-export class Post {
+export class Post extends BaseEntity {
   @Field()
-  @PrimaryKey()
+  @PrimaryGeneratedColumn()
   id!: number;
 
   @Field()
-  @Property()
+  @Column()
   title!: string;
 
   @Field()
-  @Property({ default: 'NOW()' })
-  createdAt: Date = new Date();
+  @Column({ type: 'int', default: 0 })
+  points!: string;
 
   @Field()
-  @Property({ default: 'NOW()', onUpdate: () => new Date() })
-  updatedAt: Date = new Date();
+  @Column()
+  text!: string;
+
+  @Field()
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @Field()
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @Field(() => User)
+  @ManyToOne(() => User, (user) => user.posts)
+  creator: User;
+
+  @Field(() => Int, { nullable: true })
+  voteStatus: number | null; // 1 or -1 or null
+
+  @Field()
+  @Column()
+  creatorId: number;
+
+  @OneToMany(() => Updoot, (updoot) => updoot.post)
+  updoots: Updoot[];
 }

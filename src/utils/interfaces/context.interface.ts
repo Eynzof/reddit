@@ -1,8 +1,12 @@
-import { Connection, EntityManager, IDatabaseDriver } from '@mikro-orm/core';
 import { Request, Response, Express } from 'express';
+import { Redis } from 'ioredis';
+import { createUpdootLoader } from 'utils/createUpdootLoader';
+import { createUserLoader } from 'utils/createUserLoader';
 
 export interface MyContext {
   req: Request & { session?: Express.Session };
   res: Response;
-  em: EntityManager<IDatabaseDriver<Connection>>;
+  redis: Redis;
+  userLoader: ReturnType<typeof createUserLoader>;
+  updootLoader: ReturnType<typeof createUpdootLoader>;
 }

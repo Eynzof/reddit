@@ -1,26 +1,45 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
-import { Field, ObjectType } from 'type-graphql';
-// import { v4 } from 'uuid';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  Column,
+  CreateDateColumn,
+  BaseEntity,
+  OneToMany,
+} from 'typeorm';
+import { ObjectType, Field } from 'type-graphql';
+import { Post } from './post.entity';
+import { Updoot } from './updoot.entity';
 
 @ObjectType()
 @Entity()
-export class User {
+export class User extends BaseEntity {
   @Field()
-  @PrimaryKey()
+  @PrimaryGeneratedColumn()
   id!: number;
 
   @Field()
-  @Property({ type: 'text', unique: true })
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @Field()
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @Field()
+  @Column({ unique: true })
   username!: string;
 
-  @Property({ type: 'text' })
+  @Field()
+  @Column({ unique: true })
+  email!: string;
+
+  @Column()
   password!: string;
 
-  @Field()
-  @Property({ default: 'NOW()' })
-  createdAt: Date = new Date();
+  @OneToMany(() => Post, (post) => post.creator)
+  posts: Post[];
 
-  @Field()
-  @Property({ default: 'NOW()', onUpdate: () => new Date() })
-  updatedAt: Date = new Date();
+  @OneToMany(() => Updoot, (updoot) => updoot.user)
+  updoots: Updoot[];
 }
