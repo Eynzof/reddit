@@ -28,9 +28,9 @@ export const createRedisSession = () => {
         sameSite: 'lax',
 
         // TODO: check this
-        // domain: __prod__ ? '.masoniclab.com' : undefined,
+        domain: __prod__ ? '.eynzo.me' : undefined,
       },
-      secret: process.env.REDIS_SECRET,
+      secret: process.env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
     }),
