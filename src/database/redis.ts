@@ -3,10 +3,12 @@ import connectRedis from 'connect-redis';
 import Redis from 'ioredis';
 import { COOKIE_NAME, __prod__ } from '../constants';
 
-const url = __prod__ ? process.env.REDIS_URL : process.env.REDIS_URL_DEV;
+export const REDIS_URL = __prod__
+  ? process.env.REDIS_URL_PROD
+  : process.env.REDIS_URL_DEV;
 export const createRedisSession = () => {
   const RedisStore = connectRedis(session);
-  const redis = new Redis(url);
+  const redis = new Redis(REDIS_URL);
   return {
     session: session({
       name: COOKIE_NAME,

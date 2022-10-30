@@ -17,7 +17,7 @@ import { buildTypeDefsAndResolvers } from 'type-graphql';
 import { MyContext } from 'utils/interfaces/context.interface';
 
 import { AppDataSource } from 'database/postgres';
-import { createRedisSession } from 'database/redis';
+import { createRedisSession, REDIS_URL } from 'database/redis';
 import { DataSource } from 'typeorm';
 import { createUserLoader } from 'utils/createUserLoader';
 import { createUpdootLoader } from 'utils/createUpdootLoader';
@@ -28,7 +28,8 @@ export let IDataSource: DataSource;
 const main = async () => {
   console.log('--------------------');
   console.log('process.env.NODE_ENV', process.env.NODE_ENV);
-  console.log(process.env.NODE_ENV === 'production');
+  console.log('REDIS_URL', REDIS_URL);
+  // console.log(process.env.NODE_ENV === 'production');
 
   AppDataSource.initialize()
     .then(() => {
