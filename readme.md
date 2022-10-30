@@ -5,8 +5,16 @@
 #### docker 环境下启动
 `.env`文件中的status设为`production`
 
+编译镜像
+`docker compose  -f "docker-compose.yml" build`
 
-`docker-compose up --build`
+设定版本
+
+` docker tag eynzo/reddit:latest eynzo/reddit:[v0.0.x]`
+
+上传镜像
+
+`docker push eynzo/reddit:v0.0.2`
 
 
 

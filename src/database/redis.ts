@@ -9,6 +9,10 @@ export const REDIS_URL = __prod__
 export const createRedisSession = () => {
   const RedisStore = connectRedis(session);
   const redis = new Redis(process.env.REDIS_URL);
+  let secret = 'thisisfallbacksecret';
+  if (process.env.SESSION_SECRET) {
+    secret = process.env.SESSION_SECRET;
+  }
   return {
     session: session({
       name: COOKIE_NAME,
@@ -30,7 +34,7 @@ export const createRedisSession = () => {
         // TODO: check this
         domain: __prod__ ? '.eynzo.me' : undefined,
       },
-      secret: process.env.SESSION_SECRET,
+      secret,
       resave: false,
       saveUninitialized: false,
     }),

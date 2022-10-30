@@ -29,6 +29,11 @@ const main = async () => {
   console.log('--------------------');
   // console.log(process.env.NODE_ENV === 'production');
 
+  let origin = 'https://eynzo.me';
+  if (process.env.CORS_ORIGIN) {
+    origin = process.env.CORS_ORIGIN;
+  }
+
   AppDataSource.initialize()
     .then(() => {
       // here you can start to work with your database
@@ -85,7 +90,7 @@ const main = async () => {
     server.applyMiddleware({
       app,
       cors: {
-        origin: process.env.CORS_ORIGIN,
+        origin,
         credentials: true,
       },
     });
