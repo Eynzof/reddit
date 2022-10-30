@@ -6,7 +6,7 @@
 `.env`文件中的status设为`production`
 
 编译镜像
-`docker compose  -f "docker-compose.yml" build`
+`docker compose build`
 
 设定版本
 

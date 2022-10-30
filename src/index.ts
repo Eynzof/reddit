@@ -94,7 +94,9 @@ const main = async () => {
         credentials: true,
       },
     });
-
+    app.get('/', (req, res) => {
+      res.send('api running');
+    });
     app.listen(parseInt(process.env.PORT), () => {
       console.log(`server listening on port 4000`);
     });
