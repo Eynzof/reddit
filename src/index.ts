@@ -4,23 +4,19 @@ import 'reflect-metadata';
 import express from 'express';
 import 'express-async-errors';
 
-import {
-  ApolloServerPluginLandingPageLocalDefault,
-  ApolloServerPluginLandingPageGraphQLPlayground,
-} from 'apollo-server-core';
+import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
 import { ApolloServer } from 'apollo-server-express';
-import cors from 'cors';
 import { HelloResolver } from 'resolvers/hello.resolver';
 import { PostResolver } from 'resolvers/post.resolver';
 import { UserResolver } from 'resolvers/user.resolver';
 import { buildTypeDefsAndResolvers } from 'type-graphql';
 import { MyContext } from 'utils/interfaces/context.interface';
 
-import { AppDataSource, POSTGRES_URL } from 'database/postgres';
-import { createRedisSession, REDIS_URL } from 'database/redis';
+import { AppDataSource } from 'database/postgres';
+import { createRedisSession } from 'database/redis';
 import { DataSource } from 'typeorm';
-import { createUserLoader } from 'utils/createUserLoader';
 import { createUpdootLoader } from 'utils/createUpdootLoader';
+import { createUserLoader } from 'utils/createUserLoader';
 
 export let IDataSource: DataSource;
 
@@ -28,8 +24,8 @@ export let IDataSource: DataSource;
 const main = async () => {
   console.log('--------------------');
   console.log('process.env.NODE_ENV', process.env.NODE_ENV);
-  console.log('REDIS_URL', REDIS_URL);
-  console.log('POSTGRES_URL', POSTGRES_URL);
+  console.log('REDIS_URL', process.env.REDIS_URL);
+  console.log('POSTGRES_URL', process.env.DATABASE_URL);
   console.log('--------------------');
   // console.log(process.env.NODE_ENV === 'production');
 

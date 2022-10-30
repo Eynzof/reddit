@@ -12,7 +12,7 @@ export const POSTGRES_URL = __prod__
   : process.env.POSTGRES_URL_DEV;
 export const AppDataSource = new DataSource({
   type: 'postgres',
-  url: POSTGRES_URL,
+  url: process.env.DATABASE_URL,
   migrations: [path.join(__dirname, '../migrations/*')],
   entities: [Post, User, Updoot],
   // synchronize: true,

@@ -8,7 +8,7 @@ export const REDIS_URL = __prod__
   : process.env.REDIS_URL_DEV;
 export const createRedisSession = () => {
   const RedisStore = connectRedis(session);
-  const redis = new Redis(REDIS_URL);
+  const redis = new Redis(process.env.REDIS_URL);
   return {
     session: session({
       name: COOKIE_NAME,
