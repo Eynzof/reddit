@@ -7,15 +7,12 @@ import path from 'path';
 import { Updoot } from 'entities/updoot.entity';
 import { __prod__ } from '../constants';
 
+export const POSTGRES_URL = __prod__
+  ? process.env.POSTGRES_URL_PROD
+  : process.env.POSTGRES_URL_DEV;
 export const AppDataSource = new DataSource({
   type: 'postgres',
-  host: __prod__
-    ? process.env.POSTGRES_HOST_PROD
-    : process.env.POSTGRES_HOST_DEV,
-  port: parseInt(process.env.POSTGRES_PORT),
-  username: process.env.POSTGRES_USERNAME,
-  password: process.env.POSTGRES_PASSWORD,
-  database: process.env.POSTGRES_DATABASE,
+  url: POSTGRES_URL,
   migrations: [path.join(__dirname, '../migrations/*')],
   entities: [Post, User, Updoot],
   // synchronize: true,

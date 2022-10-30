@@ -16,7 +16,7 @@ import { UserResolver } from 'resolvers/user.resolver';
 import { buildTypeDefsAndResolvers } from 'type-graphql';
 import { MyContext } from 'utils/interfaces/context.interface';
 
-import { AppDataSource } from 'database/postgres';
+import { AppDataSource, POSTGRES_URL } from 'database/postgres';
 import { createRedisSession, REDIS_URL } from 'database/redis';
 import { DataSource } from 'typeorm';
 import { createUserLoader } from 'utils/createUserLoader';
@@ -29,6 +29,8 @@ const main = async () => {
   console.log('--------------------');
   console.log('process.env.NODE_ENV', process.env.NODE_ENV);
   console.log('REDIS_URL', REDIS_URL);
+  console.log('POSTGRES_URL', POSTGRES_URL);
+  console.log('--------------------');
   // console.log(process.env.NODE_ENV === 'production');
 
   AppDataSource.initialize()
