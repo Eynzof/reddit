@@ -7,7 +7,7 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "cross-env ts-node-dev -r tsconfig-paths/register src/index.ts",
+    "dev": "cross-env NODE_ENV=dev ts-node-dev -r tsconfig-paths/register src/index.ts",
     "gen-env": "gen-env-types .env -o src/utils/types/env.d.ts -e .",
     "start": "cross-env NODE_PATH=./dist DEBUG=express-session node dist/index.js",
     "lint": "eslint src/**/*.ts --fix",
