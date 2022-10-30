@@ -133,7 +133,6 @@ dist
 
 # lock files
 package-lock.json
-yarn.lock
 
 # submodule
 reddit-web.diff
